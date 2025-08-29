@@ -1,0 +1,188 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits"
+  ],
+  "timezone": "America/Los_Angeles",
+  "dependencyDashboard": true,
+  "rebaseWhen": "behind-base-branch",
+  "rangeStrategy": "replace",
+  "prCreation": "immediate",
+  "automerge": true,
+  "commitBodyTable": true,
+  "prHourlyLimit": 10,
+  "configMigration": true,
+  "dependencyDashboardOSVVulnerabilitySummary": "all",
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  "platformAutomerge": false,
+  "ignoreTests": false,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true,
+    "automergeType": "pr",
+    "automergeStrategy": "squash",
+    "schedule": [
+      "before 12pm on monday"
+    ]
+  },
+  "npm": {
+    "postUpdateOptions": [
+      "npmDedupe"
+    ]
+  },
+  "packageRules": [
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "GitHub Actions (minor/patch)",
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "GitHub Actions (major)",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Automerge minor/patch updates (default)",
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Major Versions - no automerge",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "labels": [
+        "renovate-major",
+        "needs-review"
+      ]
+    },
+    {
+      "matchManagers": [
+        "npm"
+      ],
+      "groupName": "npm minor/patch",
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "matchManagers": [
+        "npm"
+      ],
+      "groupName": "npm major",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "labels": [
+        "renovate-major",
+        "needs-review"
+      ]
+    },
+    {
+      "description": "Update Node in .nvmrc / .node-version",
+      "matchManagers": [
+        "nvm",
+        "node-version"
+      ],
+      "groupName": "Node runtime (minor/patch)",
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "labels": [
+        "node-runtime"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
+    },
+    {
+      "description": "Update Node in .nvmrc / .node-version",
+      "matchManagers": [
+        "nvm",
+        "node-version"
+      ],
+      "groupName": "Node runtime (major)",
+      "automerge": false,
+      "labels": [
+        "node-runtime",
+        "renovate-major",
+        "needs-review"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ]
+    },
+    {
+      "description": "Docker Compose - minor/patch automerge",
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest"
+      ],
+      "groupName": "compose images (minor/patch)",
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "description": "Docker Compose - major PRs",
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "groupName": "compose images (major)",
+      "automerge": false,
+      "labels": [
+        "renovate-major",
+        "compose",
+        "needs-review"
+      ]
+    },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchCurrentVersion": "^\\d+\\.\\d+(?:\\.\\d+)?-\\d{8}$",
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?-(?<year>\\d{4})(?<month>\\d{2})(?<day>\\d{2})$"
+    },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "/^lscr\\.io\\/linuxserver\\//"
+      ],
+      "versioning": "regex:^v?(?<compatibility>[A-Za-z0-9]+)-[Ll][Ss](?<major>\\d+)$"
+    }
+  ]
+}
