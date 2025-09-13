@@ -60,7 +60,8 @@
     {
       "matchDatasources": ["docker"],
       "matchPackageNames": ["/^lscr\\.io\\/linuxserver\\//"],
-      "versioning": "regex:^v?(?<compatibility>[A-Za-z0-9]+)-[Ll][Ss](?<major>\\d+)$"
+      "matchCurrentVersion": "^v?[A-Za-z0-9._-]+-[Ll][Ss]\\d+$",
+      "versioning": "regex:^v?(?<compatibility>[A-Za-z0-9._-]+)-[Ll][Ss](?<major>\\d+)$"
     }
   ]
 }
