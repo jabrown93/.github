@@ -53,6 +53,15 @@
       "automergeStrategy": "squash"
     },
     {
+      "description": "Linuxserver: prefer semver when current tag is semver-like; ignore date-only tags",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["/^lscr\\.io\\/linuxserver\\//"],
+      "matchCurrentVersion": "^v?\\d+(?:\\.\\d+){1,2}(?:-[Ll][Ss]\\d+)?$",
+      "extractVersion": "^v?(?<version>\\d+(?:\\.\\d+){1,2})",
+      "versioning": "semver-coerced",
+      "allowedVersions": "/^v?\\d+(?:\\.\\d+){1,2}(?:-[Ll][Ss]\\d+)?$/"
+    },
+    {
       "matchDatasources": ["docker"],
       "matchCurrentVersion": "^\\d+\\.\\d+(?:\\.\\d+)?-\\d{8}$",
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?-(?<year>\\d{4})(?<month>\\d{2})(?<day>\\d{2})$"
