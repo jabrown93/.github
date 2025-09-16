@@ -21,6 +21,7 @@
   "automergeStrategy": "squash",
   "platformAutomerge": false,
   "ignoreTests": false,
+  "platformCommit": "enabled",
 
   "lockFileMaintenance": {
     "enabled": true,
