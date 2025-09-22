@@ -15,7 +15,8 @@
     ":dependencyDashboardApproval",
     ":docker",
     "security:openssf-scorecard",
-    ":npm"
+    ":npm",
+    ":enableRenovate"
   ],
   "timezone": "America/Los_Angeles",
   "rangeStrategy": "replace",
@@ -107,7 +108,8 @@
         "/^lscr\\.io\\/linuxserver\\//"
       ],
       "matchCurrentVersion": "^v?[A-Za-z0-9._-]+-[Ll][Ss]\\d+$",
-      "versioning": "regex:^v?(?<compatibility>[A-Za-z0-9._-]+)-[Ll][Ss](?<major>\\d+)$"
+      "versioning": "regex:^v?(?<compatibility>[A-Za-z0-9._-]+)-[Ll][Ss](?<major>\\d+)$",
+      "allowedVersions": "!/^(2020|2021).*/"
     }
   ]
 }
