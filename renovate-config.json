@@ -1,75 +1,111 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    ":semanticCommits"
+    "config:best-practices",
+    "group:allNonMajor",
+    "npm:unpublishSafe",
+    ":semanticCommits",
+    "schedule:daily",
+    "schedule:automergeDaily",
+    ":rebaseStalePrs",
+    ":automergeMinor",
+    ":maintainLockFilesWeekly",
+    ":automergeRequireAllStatusChecks",
+    ":combinePatchMinorReleases",
+    ":dependencyDashboardApproval",
+    ":docker",
+    "security:openssf-scorecard",
+    ":npm"
   ],
-
   "timezone": "America/Los_Angeles",
-  "schedule": ["* 0-6 * * *"],
-
-  "dependencyDashboard": true,
-  "rebaseWhen": "behind-base-branch",
   "rangeStrategy": "replace",
-  "prCreation": "immediate",
-  "automerge": true,
   "commitBodyTable": true,
   "prHourlyLimit": 10,
-  "configMigration": true,
   "dependencyDashboardOSVVulnerabilitySummary": "all",
   "automergeType": "pr",
   "automergeStrategy": "squash",
   "platformAutomerge": false,
-  "ignoreTests": false,
   "platformCommit": "enabled",
-
-  "lockFileMaintenance": {
-    "enabled": true,
-    "automerge": true,
-    "automergeType": "pr",
-    "automergeStrategy": "squash",
-    "schedule": ["* 0-6 * * 1"]
-  },
-
-  "npm": {
-    "postUpdateOptions": ["npmDedupe"]
-  },
-
-  "packageRules": [
+  "regexManagers": [
     {
-      "description": "Group ALL major updates into a single PR",
-      "matchUpdateTypes": ["major"],
-      "groupName": "All major updates",
-      "groupSlug": "all-majors",
-      "automerge": false,
-      "labels": ["renovate-major", "needs-review"]
+      "fileMatch": [
+        "^.*$"
+      ],
+      "matchStrings": [
+        "[\"']{0,1}(?<currentValue>[^\\s\"']*)[\"']{0,1}\\s+#\\s+(renovate\\s+)(?<dataSource>[^\\s\"']+)\\s+(?<depName>[^\\s\"']+)"
+      ]
     },
     {
-      "description": "Group ALL minor/patch updates into a single PR",
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "All non-major updates",
-      "groupSlug": "all-non-majors",
-      "automerge": true,
-      "automergeType": "pr",
-      "automergeStrategy": "squash"
+      "fileMatch": [
+        "^.*$"
+      ],
+      "datasourceTemplate": "docker",
+      "matchStrings": [
+        "[\"']{0,1}(?<depName>[^\\s\"']+):(?<currentValue>[^\\s\"']*)[\"']{0,1}\\s+#\\s+(renovate)"
+      ]
+    }
+  ],
+  "npm": {
+    "postUpdateOptions": [
+      "npmDedupe"
+    ]
+  },
+  "packageRules": [
+    {
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "semanticCommitType": "feat!",
+      "labels": [
+        "renovate-major",
+        "needs-review"
+      ]
+    },
+    {
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "semanticCommitType": "fix",
+      "labels": [
+        "renovate-patch"
+      ]
+    },
+    {
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "semanticCommitType": "feat",
+      "labels": [
+        "renovate-minor"
+      ]
     },
     {
       "description": "Linuxserver: prefer semver when current tag is semver-like; ignore date-only tags",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["/^lscr\\.io\\/linuxserver\\//"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "/^lscr\\.io\\/linuxserver\\//"
+      ],
       "matchCurrentVersion": "^v?\\d+(?:\\.\\d+){1,2}(?:-[Ll][Ss]\\d+)?$",
       "extractVersion": "^v?(?<version>\\d+(?:\\.\\d+){1,2})",
       "versioning": "semver-coerced",
       "allowedVersions": "/^v?\\d+(?:\\.\\d+){1,2}(?:-[Ll][Ss]\\d+)?$/"
     },
     {
-      "matchDatasources": ["docker"],
+      "matchDatasources": [
+        "docker"
+      ],
       "matchCurrentVersion": "^\\d+\\.\\d+(?:\\.\\d+)?-\\d{8}$",
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?-(?<year>\\d{4})(?<month>\\d{2})(?<day>\\d{2})$"
     },
     {
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["/^lscr\\.io\\/linuxserver\\//"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "/^lscr\\.io\\/linuxserver\\//"
+      ],
       "matchCurrentVersion": "^v?[A-Za-z0-9._-]+-[Ll][Ss]\\d+$",
       "versioning": "regex:^v?(?<compatibility>[A-Za-z0-9._-]+)-[Ll][Ss](?<major>\\d+)$"
     }
