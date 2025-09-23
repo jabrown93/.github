@@ -11,7 +11,6 @@
     ":maintainLockFilesWeekly",
     ":automergeRequireAllStatusChecks",
     ":combinePatchMinorReleases",
-    ":dependencyDashboardApproval",
     ":docker",
     "security:openssf-scorecard",
     ":npm",
