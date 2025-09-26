@@ -4,7 +4,6 @@
     "config:best-practices",
     "group:allNonMajor",
     "npm:unpublishSafe",
-    ":semanticCommits",
     "schedule:automergeDaily",
     ":rebaseStalePrs",
     ":automergeMinor",
