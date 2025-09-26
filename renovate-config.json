@@ -55,7 +55,6 @@
       "matchUpdateTypes": [
         "major"
       ],
-      "semanticCommitType": "feat!",
       "labels": [
         "renovate-major",
         "needs-review"
@@ -65,7 +64,6 @@
       "matchUpdateTypes": [
         "patch"
       ],
-      "semanticCommitType": "fix",
       "labels": [
         "renovate-patch"
       ]
@@ -74,7 +72,6 @@
       "matchUpdateTypes": [
         "minor"
       ],
-      "semanticCommitType": "feat",
       "labels": [
         "renovate-minor"
       ]
