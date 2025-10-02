@@ -6,7 +6,6 @@
     ":pinDevDependencies",
     "abandonments:recommended",
     "npm:unpublishSafe",
-    "schedule:automergeDaily",
     ":rebaseStalePrs",
     ":automergeMinor",
     ":maintainLockFilesWeekly",
@@ -25,7 +24,6 @@
   "dependencyDashboardOSVVulnerabilitySummary": "all",
   "automergeType": "pr",
   "automergeStrategy": "squash",
-  "platformAutomerge": false,
   "platformCommit": "enabled",
   "regexManagers": [
     {
