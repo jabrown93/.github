@@ -15,7 +15,10 @@
     "security:openssf-scorecard",
     ":npm",
     ":enableRenovate",
-    ":ignoreUnstable"
+    ":ignoreUnstable",
+    "customManagers:mavenPropertyVersions",
+    "mergeConfidence:all-badges",
+    "replacements:all"
   ],
   "timezone": "America/Los_Angeles",
   "rangeStrategy": "replace",
@@ -79,8 +82,8 @@
       "matchDatasources": [
         "docker"
       ],
-      "matchCurrentVersion": "^\\d+\\.\\d+(?:\\.\\d+)?-\\d{8}$",
-      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?-(?<year>\\d{4})(?<month>\\d{2})(?<day>\\d{2})$",
+      "matchCurrentVersion": "^\\d{4}((\\.|-)\\d{1,2}){2}$",
+      "versioning": "regex:^(?<major>\\d+)((\\.|-)(?<minor>\\d+)((\\.|-)(?<patch>\\d+)$",
       "allowedVersions": "!/^(2020|2021).*/"
     },
     {
@@ -88,11 +91,30 @@
         "docker"
       ],
       "matchPackageNames": [
-        "/^lscr\\.io\\/linuxserver\\//"
+        "/^lscr\\.io\\/linuxserver\\/modmanager$/",
+        "/^lscr\\.io\\/linuxserver\\/lazylibrarian$/"
       ],
       "matchCurrentVersion": "^v?[A-Za-z0-9._-]+-[Ll][Ss]\\d+$",
       "versioning": "regex:^v?(?<compatibility>[A-Za-z0-9._-]+)-[Ll][Ss](?<major>\\d+)$",
       "allowedVersions": "!/^(2020|2021).*/"
+    },
+    {
+      "description": "Automerge npm devDependencies (minor/patch) directly to main",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDatasources": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "branch"
     }
   ]
 }

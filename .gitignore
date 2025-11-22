@@ -1,0 +1,5 @@
+.idea/
+
+# macOS
+.DS_Store
+*.swp
