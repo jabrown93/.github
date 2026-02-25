@@ -1,100 +1,105 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    ":configMigration",
-    ":pinDevDependencies",
-    "abandonments:recommended",
-    "npm:unpublishSafe",
-    ":rebaseStalePrs",
-    ":automergeMinor",
-    ":maintainLockFilesWeekly",
-    ":automergeRequireAllStatusChecks",
-    ":combinePatchMinorReleases",
-    ":docker",
-    "security:openssf-scorecard",
-    ":npm",
-    ":enableRenovate",
-    ":ignoreUnstable",
-    "customManagers:mavenPropertyVersions",
-    "mergeConfidence:all-badges",
-    "replacements:all"
-  ],
-  "timezone": "America/Los_Angeles",
-  "rangeStrategy": "replace",
-  "commitBodyTable": true,
-  "prHourlyLimit": 10,
-  "dependencyDashboardOSVVulnerabilitySummary": "all",
-  "automergeType": "pr",
-  "automergeStrategy": "squash",
-  "platformCommit": "enabled",
-  "regexManagers": [
-    {
-      "fileMatch": [
-        "^.*$"
-      ],
-      "matchStrings": [
-        "[\"']{0,1}(?<currentValue>[^\\s\"']*)[\"']{0,1}\\s+#\\s+(renovate\\s+)(?<dataSource>[^\\s\"']+)\\s+(?<depName>[^\\s\"']+)"
-      ]
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:recommended",
+        ":configMigration",
+        ":pinDevDependencies",
+        "abandonments:recommended",
+        "npm:unpublishSafe",
+        ":rebaseStalePrs",
+        ":automergeMinor",
+        ":maintainLockFilesWeekly",
+        ":automergeRequireAllStatusChecks",
+        ":combinePatchMinorReleases",
+        ":docker",
+        "security:openssf-scorecard",
+        ":npm",
+        ":enableRenovate",
+        ":ignoreUnstable",
+        "customManagers:mavenPropertyVersions",
+        "mergeConfidence:all-badges",
+        "replacements:all"
+    ],
+    "timezone": "America/Los_Angeles",
+    "rangeStrategy": "replace",
+    "commitBodyTable": true,
+    "prHourlyLimit": 10,
+    "dependencyDashboardOSVVulnerabilitySummary": "all",
+    "automergeType": "pr",
+    "automergeStrategy": "squash",
+    "platformCommit": "enabled",
+    "regexManagers": [
+        {
+            "fileMatch": [
+                "^.*$"
+            ],
+            "matchStrings": [
+                "[\"']{0,1}(?<currentValue>[^\\s\"']*)[\"']{0,1}\\s+#\\s+(renovate\\s+)(?<dataSource>[^\\s\"']+)\\s+(?<depName>[^\\s\"']+)"
+
+            ]
+        },
+        {
+            "fileMatch": [
+                "^.*$"
+            ],
+            "datasourceTemplate": "docker",
+            "matchStrings": [
+                "[\"']{0,1}(?<depName>[^\\s\"']+):(?<currentValue>[^\\s\"']*)[\"']{0,1}\\s+#\\s+(renovate)"
+            ]
+        }
+    ],
+    "npm": {
+        "postUpdateOptions": [
+            "npmDedupe"
+        ]
     },
-    {
-      "fileMatch": [
-        "^.*$"
-      ],
-      "datasourceTemplate": "docker",
-      "matchStrings": [
-        "[\"']{0,1}(?<depName>[^\\s\"']+):(?<currentValue>[^\\s\"']*)[\"']{0,1}\\s+#\\s+(renovate)"
-      ]
-    }
-  ],
-  "npm": {
-    "postUpdateOptions": [
-      "npmDedupe"
+    "packageRules": [
+        {
+            "matchUpdateTypes": [
+                "major"
+            ],
+            "labels": [
+                "renovate-major",
+                "needs-review"
+            ]
+        },
+        {
+            "matchUpdateTypes": [
+                "patch"
+            ],
+            "labels": [
+                "renovate-patch"
+            ],
+            "automerge": true,
+            "automergeType": "branch"
+        },
+        {
+            "matchUpdateTypes": [
+                "minor"
+            ],
+            "labels": [
+                "renovate-minor"
+            ],
+            "automerge": true,
+            "automergeType": "branch"
+        },
+        {
+            "description": "Automerge npm devDependencies (minor/patch) directly to main",
+            "matchManagers": [
+                "npm"
+            ],
+            "matchDatasources": [
+                "npm"
+            ],
+            "matchDepTypes": [
+                "devDependencies"
+            ],
+            "matchUpdateTypes": [
+                "minor",
+                "patch"
+            ],
+            "automerge": true,
+            "automergeType": "branch"
+        }
     ]
-  },
-  "packageRules": [
-    {
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "labels": [
-        "renovate-major",
-        "needs-review"
-      ]
-    },
-    {
-      "matchUpdateTypes": [
-        "patch"
-      ],
-      "labels": [
-        "renovate-patch"
-      ]
-    },
-    {
-      "matchUpdateTypes": [
-        "minor"
-      ],
-      "labels": [
-        "renovate-minor"
-      ]
-    },
-    {
-      "description": "Automerge npm devDependencies (minor/patch) directly to main",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchDatasources": [
-        "npm"
-      ],
-      "matchDepTypes": [
-        "devDependencies"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "automerge": true,
-      "automergeType": "branch"
-    }
-  ]
 }
