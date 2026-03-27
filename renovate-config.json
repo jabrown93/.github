@@ -20,6 +20,13 @@
         "mergeConfidence:all-badges",
         "replacements:all"
     ],
+    "osvVulnerabilityAlerts": true,
+    "vulnerabilityAlerts": {
+        "automerge": true,
+        "labels": [
+            "security"
+        ]
+    },
     "timezone": "America/Los_Angeles",
     "rangeStrategy": "replace",
     "commitBodyTable": true,
@@ -82,6 +89,21 @@
             ],
             "automerge": true,
             "automergeType": "branch"
+        },
+        {
+            "description": "Prioritize and automerge vulnerability remediation PRs",
+            "matchCategories": [
+                "vulnerability"
+            ],
+            "labels": [
+                "security"
+            ],
+            "automerge": true,
+            "automergeType": "pr",
+            "prPriority": 10,
+            "schedule": [
+                "at any time"
+            ]
         },
         {
             "description": "Automerge npm devDependencies (minor/patch) directly to main",
