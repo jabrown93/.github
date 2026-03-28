@@ -92,8 +92,8 @@
         },
         {
             "description": "Prioritize and automerge vulnerability remediation PRs",
-            "matchCategories": [
-                "vulnerability"
+            "matchJsonata": [
+                "vulnerabilityFixVersion != null"
             ],
             "labels": [
                 "security"
