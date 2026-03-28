@@ -20,6 +20,11 @@
         "mergeConfidence:all-badges",
         "replacements:all"
     ],
+    "vulnerabilityAlerts": {
+        "labels": ["security"],
+        "automerge": true,
+        "automergeType": "branch"
+    },
     "timezone": "America/Los_Angeles",
     "rangeStrategy": "replace",
     "commitBodyTable": true,
