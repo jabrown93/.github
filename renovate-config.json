@@ -42,7 +42,6 @@
             ],
             "matchStrings": [
                 "[\"']{0,1}(?<currentValue>[^\\s\"']*)[\"']{0,1}\\s+#\\s+(renovate\\s+)(?<dataSource>[^\\s\"']+)\\s+(?<depName>[^\\s\"']+)"
-
             ]
         },
         {
@@ -63,6 +62,37 @@
     "packageRules": [
         {
             "internalChecksFilter": "strict",
+            "minimumReleaseAge": "7 days",
+            "matchDatasources": [
+                "crate",
+                "rubygems",
+                "github-releases",
+                "github-release-attachments",
+                "github-tags",
+                "github-digest",
+                "terraform-provider",
+                "go",
+                "golang-version",
+                "maven",
+                "node-version",
+                "nuget",
+                "pypi",
+                "ruby-version",
+                "jsr",
+                "helm",
+                "galaxy",
+                "galaxy-collection",
+
+            ]
+        },
+        {
+            "matchDatasources": [
+                "docker"
+            ],
+            "matchSourceUrls": [
+                "^https://index\\.docker\\.io"
+            ],
+
             "minimumReleaseAge": "7 days"
         },
         {
