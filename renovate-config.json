@@ -63,7 +63,7 @@
     "packageRules": [
         {
             "internalChecksFilter": "strict",
-            "minimumReleaseAge": "3 days"
+            "minimumReleaseAge": "7 days"
         },
         {
             "matchUpdateTypes": [
