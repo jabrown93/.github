@@ -61,8 +61,8 @@
     },
     "packageRules": [
         {
-            "internalChecksFilter": "strict",
-            "minimumReleaseAge": "7 days",
+            "internalChecksFilter": "flexible",
+            "minimumReleaseAge": "3 days",
             "matchDatasources": [
                 "crate",
                 "rubygems",
@@ -93,7 +93,7 @@
                 "^https://index\\.docker\\.io"
             ],
 
-            "minimumReleaseAge": "7 days"
+            "minimumReleaseAge": "3 days"
         },
         {
             "matchUpdateTypes": [
