@@ -61,41 +61,6 @@
     },
     "packageRules": [
         {
-            "internalChecksFilter": "flexible",
-            "minimumReleaseAge": "3 days",
-            "matchDatasources": [
-                "crate",
-                "rubygems",
-                "github-releases",
-                "github-release-attachments",
-                "github-tags",
-                "github-digest",
-                "terraform-provider",
-                "go",
-                "golang-version",
-                "maven",
-                "node-version",
-                "nuget",
-                "pypi",
-                "ruby-version",
-                "jsr",
-                "helm",
-                "galaxy",
-                "galaxy-collection",
-
-            ]
-        },
-        {
-            "matchDatasources": [
-                "docker"
-            ],
-            "matchSourceUrls": [
-                "^https://index\\.docker\\.io"
-            ],
-
-            "minimumReleaseAge": "3 days"
-        },
-        {
             "matchUpdateTypes": [
                 "major"
             ],
