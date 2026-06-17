@@ -18,7 +18,9 @@
         ":ignoreUnstable",
         "customManagers:mavenPropertyVersions",
         "mergeConfidence:all-badges",
-        "replacements:all"
+        "preview:dockerVersions",
+        "customManagers:tfvarsVersion",
+        "customManagers:tsconfigNodeVersions"
     ],
     "osvVulnerabilityAlerts": true,
     "vulnerabilityAlerts": {
