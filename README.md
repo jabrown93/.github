@@ -15,7 +15,7 @@ by commit SHA (with a `# vX.Y.Z` comment that Renovate maintains). Consumers
 refs — with a `# vX.Y.Z` comment so Renovate can bump them:
 
 ```yaml
-uses: jabrown93/.github/.github/workflows/<name>.yml@<sha> # v1.0.0
+uses: jabrown93/.github/.github/workflows/<name>.yml@<sha> # v1.1.0
 ```
 
 Trigger events (`push`, `pull_request`, `schedule`, branch filters) and
@@ -33,7 +33,7 @@ name: Build and Lint
 on: [push, pull_request]
 jobs:
   build:
-    uses: jabrown93/.github/.github/workflows/node-build.yml@<sha> # v1.0.0
+    uses: jabrown93/.github/.github/workflows/node-build.yml@<sha> # v1.1.0
 ```
 
 ### `codeql.yml` — CodeQL advanced analysis (single language)
@@ -55,7 +55,7 @@ on:
     - cron: '25 22 * * 5'
 jobs:
   analyze:
-    uses: jabrown93/.github/.github/workflows/codeql.yml@<sha> # v1.0.0
+    uses: jabrown93/.github/.github/workflows/codeql.yml@<sha> # v1.1.0
     permissions:
       security-events: write
       packages: read
@@ -76,7 +76,7 @@ on:
     - cron: '30 1 * * *'
 jobs:
   stale:
-    uses: jabrown93/.github/.github/workflows/stale.yml@<sha> # v1.0.0
+    uses: jabrown93/.github/.github/workflows/stale.yml@<sha> # v1.1.0
     permissions:
       actions: write
       issues: write
@@ -105,7 +105,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release:
-    uses: jabrown93/.github/.github/workflows/npm-release.yml@<sha> # v1.0.0
+    uses: jabrown93/.github/.github/workflows/npm-release.yml@<sha> # v1.1.0
     permissions:
       contents: write
       issues: write
