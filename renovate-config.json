@@ -19,7 +19,7 @@
         "customManagers:mavenPropertyVersions",
         "mergeConfidence:all-badges",
         "preview:dockerVersions",
-        "customManagers:tfvarsVersion",
+        "customManagers:tfvarsVersions",
         "customManagers:tsconfigNodeVersions"
     ],
     "osvVulnerabilityAlerts": true,
