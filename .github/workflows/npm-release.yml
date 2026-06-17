@@ -1,0 +1,62 @@
+---
+# Reusable workflow: semantic-release for an npm package, authenticating as a
+# GitHub App and publishing to npm with provenance via OIDC trusted publishing.
+#
+# IMPORTANT: npm trusted publishing matches on the *caller* workflow's repo and
+# entry-point filename, so consumers must keep their caller workflow named
+# `release.yaml`/`release.yml` (whatever is registered on npmjs.org) and trigger
+# it on push to the release branches. Concurrency is left to the caller.
+name: Release
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version used for the release job
+        required: false
+        type: string
+        default: '24'
+    secrets:
+      APP_ID:
+        description: GitHub App ID used to mint the release token
+        required: true
+      APP_PRIVATE_KEY:
+        description: GitHub App private key
+        required: true
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to be able to publish a GitHub release
+      issues: write # to be able to comment on released issues
+      pull-requests: write # to be able to comment on released pull requests
+      id-token: write # to enable use of OIDC for trusted publishing and npm provenance
+    steps:
+      - uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+          # Check out the current branch tip, not github.sha. With
+          # concurrency queueing, a queued run otherwise releases its
+          # trigger SHA and is rejected as non-fast-forward once the
+          # branch has advanced. Pulling the tip turns redundant queued
+          # runs into no-ops instead.
+          ref: ${{ github.ref }}
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+      - run: npm clean-install
+      - run: npm audit signatures
+      - name: Configure atomic git pushes
+        run: git config --global push.atomic true
+      - run: npm run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
