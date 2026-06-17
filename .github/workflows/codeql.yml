@@ -1,0 +1,50 @@
+---
+# Reusable workflow: CodeQL advanced analysis for a single language.
+# Trigger events (push / pull_request / schedule) and branch filters are
+# defined by the caller. Multi-language repos should call this once per
+# language.
+name: CodeQL Advanced
+on:
+  workflow_call:
+    inputs:
+      language:
+        description: CodeQL language (e.g. javascript-typescript, java-kotlin)
+        required: false
+        type: string
+        default: javascript-typescript
+      build-mode:
+        description: CodeQL build mode (none, autobuild, manual)
+        required: false
+        type: string
+        default: none
+      runs-on:
+        description: Runner label
+        required: false
+        type: string
+        default: ubuntu-latest
+jobs:
+  analyze:
+    name: Analyze (${{ inputs.language }})
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      # required for all workflows
+      security-events: write
+      # required to fetch internal or private CodeQL packs
+      packages: read
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
+        with:
+          languages: ${{ inputs.language }}
+          build-mode: ${{ inputs.build-mode }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
+        with:
+          category: '/language:${{ inputs.language }}'
