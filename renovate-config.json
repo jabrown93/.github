@@ -92,6 +92,23 @@
             "automergeType": "branch"
         },
         {
+            "description": "Auto-merge dhi.io (Docker Hardened Images) digest re-patches across all repos. dhi.io continuously re-patches the same version tag for CVEs, so the pinned digest is the only signal a fix shipped; digest is its own updateType and is NOT matched by the generic minor/patch rules above. Together with those rules this completes non-major auto-merge for dhi.io -- major bumps still require review (renovate-major/needs-review). Gated on all status checks via :automergeRequireAllStatusChecks.",
+            "matchDatasources": [
+                "docker"
+            ],
+            "matchPackageNames": [
+                "/^dhi\\.io//"
+            ],
+            "matchUpdateTypes": [
+                "digest"
+            ],
+            "labels": [
+                "renovate-digest"
+            ],
+            "automerge": true,
+            "automergeType": "branch"
+        },
+        {
             "description": "Prioritize and automerge vulnerability remediation PRs",
             "matchJsonata": [
                 "vulnerabilityFixVersion != null"
