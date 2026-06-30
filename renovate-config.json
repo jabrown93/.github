@@ -109,6 +109,14 @@
             "automergeType": "branch"
         },
         {
+            "description": "Track BOTH the application version and the base-OS version in compound Docker tags like 'python:3.14.6-alpine3.24'. Default docker versioning only bumps the leading version and pins the whole suffix, so OS releases (e.g. -alpine3.24 -> -alpine3.25) are never proposed. This regex versioning maps the app version (major.minor[.patch]) plus the OS version (major[.minor]) into the comparable release array, so an increase in EITHER triggers an update; 'compatibility' (alpine|debian) is locked so a dependency never switches OS family -- an alpine tag is never updated to a debian tag and vice versa (the debian variant is simply ignored for an alpine image, and vice versa). OS bumps surface as patch-type updates (build/revision are handled like patch) and thus auto-merge via the patch rule above, gated on all status checks. matchCurrentValue is kept in lock-step with the versioning regex (same app/OS segment shape, anchored) so it only selects tags this versioning can parse; plain or non-conforming tags (e.g. 3.14.6, latest, 3.14.6-slim) keep default docker versioning. The OS accepts 1-3 segments: major, major.minor, or major.minor.patch -- but because Renovate's regex versioning exposes only 5 comparable numeric slots (major/minor/patch consumed by the app), the OS uses the remaining two (build=OS-major, revision=OS-minor) and a 3rd OS segment is matched but NOT independently compared (so an OS patch-only re-release such as alpine3.20.3 -> alpine3.20.5 is not flagged; OS major/minor still are). Full independent OS-patch tracking would require splitting into two dependencies via custom managers.",
+            "matchDatasources": [
+                "docker"
+            ],
+            "matchCurrentValue": "/^\\d+\\.\\d+(?:\\.\\d+)?-(?:alpine|debian)\\d+(?:\\.\\d+){0,2}$/",
+            "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?-(?<compatibility>alpine|debian)(?<build>\\d+)(?:\\.(?<revision>\\d+))?(?:\\.\\d+)?$"
+        },
+        {
             "description": "Prioritize and automerge vulnerability remediation PRs",
             "matchJsonata": [
                 "vulnerabilityFixVersion != null"
