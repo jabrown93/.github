@@ -43,7 +43,7 @@
                 "^.*$"
             ],
             "matchStrings": [
-                "[\"']{0,1}(?<currentValue>[^\\s\"']*)[\"']{0,1}\\s+#\\s+(renovate\\s+)(?<dataSource>[^\\s\"']+)\\s+(?<depName>[^\\s\"']+)"
+                "[\"']{0,1}(?<currentValue>[^\\s\"']*)[\"']{0,1}\\s+#\\s+(renovate\\s+)(?<datasource>[^\\s\"']+)\\s+(?<depName>[^\\s\"']+)"
             ]
         },
         {
