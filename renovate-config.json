@@ -109,6 +109,14 @@
             "automergeType": "branch"
         },
         {
+            "description": "Track BOTH the application version and the base-OS version in compound Docker tags like 'python:3.14.6-alpine3.24'. Default docker versioning only bumps the leading version and pins the whole suffix, so OS releases (e.g. -alpine3.24 -> -alpine3.25) are never proposed. This regex versioning maps app major/minor/patch plus the OS major(.minor) into the comparable release array, so an increase in EITHER triggers an update; 'compatibility' (alpine|debian) is locked so a dependency never switches OS family -- an alpine tag is never updated to a debian tag and vice versa (the debian variant is simply ignored for an alpine image, and vice versa). OS bumps surface as patch-type updates (build/revision are handled like patch) and thus auto-merge via the patch rule above, gated on all status checks. matchCurrentValue confines this versioning to compound tags so plain tags (e.g. 3.14.6, latest) keep default docker versioning. Limitation: only OS major.minor is tracked -- a third OS segment (e.g. alpine3.20.3) falls back to default docker versioning.",
+            "matchDatasources": [
+                "docker"
+            ],
+            "matchCurrentValue": "/-(?:alpine|debian)\\d/",
+            "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>alpine|debian)(?<build>\\d+)(?:\\.(?<revision>\\d+))?$"
+        },
+        {
             "description": "Prioritize and automerge vulnerability remediation PRs",
             "matchJsonata": [
                 "vulnerabilityFixVersion != null"
