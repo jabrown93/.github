@@ -116,6 +116,50 @@ jobs:
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
 ```
 
+### `docker-release.yml` — semantic-release + Docker image publish
+
+| input | default |
+|---|---|
+| `image` | *(required)* full image ref, e.g. `ghcr.io/jabrown93/crosswatch` |
+| `dockerfile` | `./Dockerfile` |
+| `context` | `.` |
+| `platforms` | `linux/amd64,linux/arm64` |
+| `build-args` | `""` (extra newline-separated args, appended after the automatic `APP_VERSION=v<version>`) |
+| `extra-plugins` | `""` (extra semantic-release plugins beyond commit-analyzer/release-notes-generator/changelog/git/github) |
+
+Secrets `APP_ID` and `APP_PRIVATE_KEY` must be passed by the caller. Two jobs
+(`release` then `image`) so a build/push/sign failure never strands a
+tagged-but-imageless release — re-run just the failed `image` job and it
+reuses `release`'s outputs instead of re-evaluating semantic-release. The
+image is checked out and built from the release tag itself, tagged `:latest`
++`:v<version>` on `main` or `:beta`+`:v<version>` on a prerelease branch, and
+signed keylessly with cosign. See `jabrown93/AURA/.github/workflows/release.yml`
+for a richer example (weekly dependency roll-up, rolling `:edge` tag, manual
+re-publish) this was modeled on but deliberately left out of the shared
+version — add those as caller-side extensions if a repo needs them.
+
+```yaml
+name: Release
+on:
+  push:
+    branches: [main, beta]
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release:
+    uses: jabrown93/.github/.github/workflows/docker-release.yml@<sha> # v1.2.0
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    with:
+      image: ghcr.io/jabrown93/<repo>
+    secrets:
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+```
+
 ## Versioning
 
 Releases are tagged `vMAJOR.MINOR.PATCH`. Breaking changes to a workflow's
