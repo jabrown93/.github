@@ -32,6 +32,7 @@
     },
     "timezone": "America/Los_Angeles",
     "rangeStrategy": "replace",
+    "semanticCommits": "enabled",
     "commitBodyTable": true,
     "prHourlyLimit": 10,
     "dependencyDashboardOSVVulnerabilitySummary": "all",
