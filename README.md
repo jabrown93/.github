@@ -249,6 +249,15 @@ instead of releasing on every dependency merge:
        - cron: '0 9 * * 1' # Mon 09:00 UTC — weekly dependency roll-up
    ```
 
+   GitHub only fires `schedule` events from the **default branch**, and both
+   reusable workflows check out `${{ github.ref }}` — so this only ever sweeps
+   `main`. A repo that also releases prereleases off `beta` gets no automatic
+   weekly promotion there; `fix(deps)` commits on `beta` stay suppressed until
+   an unrelated `feat`/`fix` lands or someone runs the workflow manually (add
+   `workflow_dispatch: {}` to the caller's `on:` as that escape hatch — see
+   `jabrown93/AURA`'s `version-release.yml`, which has both this same
+   limitation and that same manual trigger).
+
 2. Use a `.releaserc.js` (not `.releaserc.json`) so the suppression can read
    `RELEASE_DEPS` at load time:
 
