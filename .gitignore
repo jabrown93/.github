@@ -1,5 +1,8 @@
 .idea/
 
+# Release tooling only (see package.json) — no runtime JS here.
+node_modules/
+
 # macOS
 .DS_Store
 *.swp
