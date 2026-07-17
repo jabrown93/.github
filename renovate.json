@@ -10,6 +10,16 @@
         "github-actions"
       ],
       "semanticCommitType": "fix"
+    },
+    {
+      "description": "Undo the rule above for release.yml, the only workflow here that is NOT reusable: it runs `on: push` for this repo's own versioning and no consumer can call it, so bumping an action inside it changes nothing a consumer executes and must not cut a release. Without this, adding an action used ONLY by release.yml would reintroduce exactly the no-op releases the rule above avoids. This composes correctly with grouped branches rather than defeating them: today `actions/checkout` and `actions/setup-node` appear in BOTH release.yml and the reusable workflows, so a bump extracts one dep instance per file -- the reusable instances keep `fix`, this one gets `chore` -- and generateBranchConfig picks the highest-priority type among the grouped upgrades (chore < ci < build < fix < feat), so the combined commit is still `fix` and still releases. Only an action exclusive to release.yml stays `chore` and stays silent, which is the intent. Deliberately a deny-list of the one non-reusable file rather than an allow-list of the reusable ones: a newly added reusable workflow then releases by default, instead of silently never releasing until someone remembers to extend a list.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchFileNames": [
+        ".github/workflows/release.yml"
+      ],
+      "semanticCommitType": "chore"
     }
   ]
 }
