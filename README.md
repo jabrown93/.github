@@ -253,10 +253,14 @@ instead of releasing on every dependency merge:
    reusable workflows check out `${{ github.ref }}` — so this only ever sweeps
    `main`. A repo that also releases prereleases off `beta` gets no automatic
    weekly promotion there; `fix(deps)` commits on `beta` stay suppressed until
-   an unrelated `feat`/`fix` lands or someone runs the workflow manually (add
-   `workflow_dispatch: {}` to the caller's `on:` as that escape hatch — see
-   `jabrown93/AURA`'s `version-release.yml`, which has both this same
-   limitation and that same manual trigger).
+   an unrelated `feat`/`fix` lands. Add `workflow_dispatch: {}` to the
+   caller's `on:` for an on-demand escape hatch instead — both reusable
+   workflows set `RELEASE_DEPS` on `workflow_dispatch` the same as `schedule`,
+   so manually running the workflow against `beta` promotes its suppressed
+   commits immediately. (This diverges from `jabrown93/AURA`'s
+   `version-release.yml`, whose `workflow_dispatch` does *not* set
+   `RELEASE_DEPS` — a manual run there re-evaluates ordinary push rules only,
+   the same `main`-only gap this section describes.)
 
 2. Use a `.releaserc.js` (not `.releaserc.json`) so the suppression can read
    `RELEASE_DEPS` at load time:

@@ -67,7 +67,10 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           # Read by a consumer's .releaserc.js to promote suppressed fix(deps)
           # commits (routine dependency bumps) into a single patch release on
-          # the caller's weekly schedule trigger, instead of on every push. A
-          # consumer without that opt-in config simply ignores this. See the
-          # README's "Weekly dependency releases" section.
-          RELEASE_DEPS: ${{ github.event_name == 'schedule' }}
+          # the caller's weekly schedule trigger, instead of on every push.
+          # Also true on workflow_dispatch, so a manually-triggered run (e.g.
+          # to sweep a non-default release branch a schedule can't reach) acts
+          # as an on-demand version of the same promotion. A consumer without
+          # that opt-in config simply ignores this. See the README's "Weekly
+          # dependency releases" section.
+          RELEASE_DEPS: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
