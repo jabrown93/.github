@@ -272,12 +272,19 @@ instead of releasing on every dependency merge:
    // release on push as normal. chore(...) (dev/test/CI-only) is never
    // promoted, so a week with only those changes releases nothing.
    const releaseDeps = process.env.RELEASE_DEPS === 'true';
-   const depReleaseRules = releaseDeps
-     ? [{ type: 'fix', scope: 'deps', release: 'patch' }]
-     : [{ type: 'fix', scope: 'deps', release: false }];
+   const depReleaseRules = [
+     // Must precede the fix(deps) rule below: commit-analyzer takes the
+     // first matching custom rule, so a breaking fix(deps)! (or a
+     // BREAKING CHANGE: footer) still releases major instead of being
+     // caught by the deps suppression/patch rule that follows.
+     { type: 'fix', scope: 'deps', breaking: true, release: 'major' },
+     releaseDeps
+       ? { type: 'fix', scope: 'deps', release: 'patch' }
+       : { type: 'fix', scope: 'deps', release: false },
+   ];
 
    module.exports = {
-     branches: ['main'],
+     branches: ['main', { name: 'beta', prerelease: true }],
      tagFormat: 'v${version}',
      plugins: [
        ['@semantic-release/commit-analyzer', { releaseRules: depReleaseRules }],
