@@ -262,8 +262,27 @@ instead of releasing on every dependency merge:
    `RELEASE_DEPS` — a manual run there re-evaluates ordinary push rules only,
    the same `main`-only gap this section describes.)
 
-2. Use a `.releaserc.js` (not `.releaserc.json`) so the suppression can read
-   `RELEASE_DEPS` at load time:
+2. Replace `.releaserc.json` with an executable config so the suppression can
+   read `RELEASE_DEPS` at load time. **Delete the `.releaserc.json`** — do not
+   leave it alongside: semantic-release resolves config via cosmiconfig, whose
+   search order puts `.releaserc.json` *before* `.releaserc.js`, so a leftover
+   JSON file silently wins and the new rules never load.
+
+   Pick the extension to match the repo's module system, or the config throws
+   at load:
+
+   | repo | file | export |
+   |---|---|---|
+   | `"type": "module"` in `package.json` | `.releaserc.js` | `export default {...}` |
+   | no `package.json`, or CommonJS | `.releaserc.js` | `module.exports = {...}` |
+   | `"type": "module"` but you want CommonJS | `.releaserc.cjs` | `module.exports = {...}` |
+
+   Using `module.exports` in a `.releaserc.js` under `"type": "module"` fails
+   with `ReferenceError: module is not defined in ES module scope`. It fails
+   loudly at release time rather than silently mis-releasing, but it fails.
+
+   The example below is CommonJS; for an ESM repo swap `module.exports =` for
+   `export default`.
 
    ```js
    // Runtime dep bumps (fix(deps)) are suppressed on ordinary pushes, then
@@ -273,10 +292,13 @@ instead of releasing on every dependency merge:
    // promoted, so a week with only those changes releases nothing.
    const releaseDeps = process.env.RELEASE_DEPS === 'true';
    const depReleaseRules = [
-     // Must precede the fix(deps) rule below: commit-analyzer takes the
-     // first matching custom rule, so a breaking fix(deps)! (or a
-     // BREAKING CHANGE: footer) still releases major instead of being
-     // caught by the deps suppression/patch rule that follows.
+     // Required: commit-analyzer evaluates every matching custom rule and
+     // keeps the highest release type, and a breaking fix(deps)! (or a
+     // BREAKING CHANGE: footer) would otherwise match ONLY the suppression
+     // rule below and never release. Listed first so the analyzer
+     // short-circuits on major; the rules are order-independent, but the
+     // suppression's `release: false` is falsy and only survives when no
+     // other rule matches, so leading with the strongest rule is clearer.
      { type: 'fix', scope: 'deps', breaking: true, release: 'major' },
      releaseDeps
        ? { type: 'fix', scope: 'deps', release: 'patch' }
