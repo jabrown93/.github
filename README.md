@@ -162,5 +162,30 @@ jobs:
 
 ## Versioning
 
-Releases are tagged `vMAJOR.MINOR.PATCH`. Breaking changes to a workflow's
-inputs/secrets bump the major. Consumers pin a SHA; Renovate proposes the bump.
+Releases are tagged `vMAJOR.MINOR.PATCH` and cut **automatically** by
+[`release.yml`](.github/workflows/release.yml) — semantic-release reads the
+Conventional Commits merged to `main` and publishes the tag plus a GitHub Release
+with notes. Nothing is versioned by hand. Consumers pin a SHA; Renovate proposes
+the bump, and the tag is what makes the `# vX.Y.Z` comment next to that opaque
+digest readable.
+
+| commit on `main` | effect |
+|---|---|
+| `feat: …` | minor |
+| `fix: …` / `perf: …` | patch |
+| `feat!: …` or `BREAKING CHANGE:` footer | major |
+| anything else (`ci:`, `docs:`, `refactor:`, `chore:`) | no release |
+
+Breaking changes to a workflow's inputs/secrets are what bump the major — mark
+them `!`.
+
+**Dependency bumps.** The third-party action SHAs pinned inside the reusable
+workflows are part of what consumers execute, so Renovate labels those bumps
+`fix(deps)` (see the rule in [`renovate.json`](renovate.json)) and each one ships
+as a patch. This repo's own CI-only tooling — the semantic-release
+devDependencies in `package.json` and the weekly lock-file-maintenance commit —
+stays `chore(deps)` and deliberately does **not** release: nothing a consumer runs
+has changed.
+
+`package.json` exists only to pin that tooling; there is no runtime JavaScript
+here and nothing is published to npm.

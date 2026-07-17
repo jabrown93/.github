@@ -1,5 +1,11 @@
 .idea/
 
+# Release tooling only (see package.json) — no runtime JS here.
+node_modules/
+
+# Scratch git worktrees for in-progress branches.
+.worktrees/
+
 # macOS
 .DS_Store
 *.swp
