@@ -37,6 +37,13 @@ jobs:
       - name: Lint the project
         run: npm run lint
 
+      # Consumers run `prettier --check .` from prepublishOnly, which gates the
+      # npm publish rather than the PR: a formatting nit fails the release after
+      # semantic-release has already committed, tagged and pushed. Check it here
+      # so it blocks the PR instead, and publishing only builds the artifact.
+      - name: Check formatting
+        run: npm run prettier
+
       - name: Build the project
         run: npm run build
 
