@@ -12,6 +12,7 @@
         ":maintainLockFilesWeekly",
         ":automergeRequireAllStatusChecks",
         ":combinePatchMinorReleases",
+        "group:vitestMonorepo",
         ":docker",
         "security:openssf-scorecard",
         ":npm",
