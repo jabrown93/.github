@@ -57,13 +57,13 @@
             ]
         },
         {
-            "description": "Route jabrown93/ci reusable-workflow and composite-action refs to their PER-COMPONENT tag stream. jabrown93/ci publishes component-prefixed tags (workflows-v*, generate-sbom-v*, release-checkout-v*); a consumer pins a ref by digest with a matching `# <component>-vX.Y.Z` comment. The built-in github-actions manager sees only the repo `jabrown93/ci` and would collapse every component into one version stream (and mis-sort the prefixed tags as plain semver), so it is disabled for that repo (packageRule below) and this manager owns those refs: it keys each dep on its component (distinct depName -> separate PRs), looks up github-tags on jabrown93/ci, and constrains the candidate versions to that component's prefix via extractVersionTemplate, so a workflows ref can never bump onto a generate-sbom tag. Currently matches nothing until consumers are cut over from jabrown93/.github, so it is safe to land ahead of that.",
+            "description": "Route jabrown93/ci reusable-workflow and composite-action refs to their PER-COMPONENT tag stream. jabrown93/ci publishes component-prefixed tags (workflows-v*, generate-sbom-v*, codeql-v*, node-build-v*, stale-v*, release-checkout-v*, ...); a consumer pins a ref by digest with a matching `# <component>-vX.Y.Z` comment. The component is captured generically ([a-z][a-z0-9-]*) so a newly added component routes automatically with no edit here. The built-in github-actions manager sees only the repo `jabrown93/ci` and would collapse every component into one version stream (and mis-sort the prefixed tags as plain semver), so it is disabled for that repo (packageRule below) and this manager owns those refs: it keys each dep on its component (distinct depName -> separate PRs), looks up github-tags on jabrown93/ci, and constrains the candidate versions to that component's prefix via extractVersionTemplate, so a workflows ref can never bump onto a generate-sbom tag. Currently matches nothing until consumers are cut over from jabrown93/.github, so it is safe to land ahead of that.",
             "fileMatch": [
                 "(^|/)\\.github/workflows/[^/]+\\.ya?ml$",
                 "(^|/)action\\.ya?ml$"
             ],
             "matchStrings": [
-                "uses:\\s+jabrown93/ci/(?<packagePath>\\S+)@(?<currentDigest>[0-9a-f]{40})\\s*#\\s*(?<component>workflows|generate-sbom|release-checkout)-v(?<currentValue>[0-9][^\\s]*)"
+                "uses:\\s+jabrown93/ci/(?<packagePath>\\S+)@(?<currentDigest>[0-9a-f]{40})\\s*#\\s*(?<component>[a-z][a-z0-9-]*)-v(?<currentValue>[0-9][^\\s]*)"
             ],
             "datasourceTemplate": "github-tags",
             "depNameTemplate": "jabrown93/ci:{{{component}}}",
