@@ -219,6 +219,70 @@ jobs:
       runs-on: arc-oss-<repo>
 ```
 
+## Weekly dependency releases
+
+`npm-release.yml` and `docker-release.yml` both pass a `RELEASE_DEPS` env var
+(`true` when the caller's trigger was `schedule`) into the semantic-release run.
+It does nothing on its own — a consumer opts in by classifying commits with the
+shared Renovate preset and reading `RELEASE_DEPS` in its own `.releaserc.js`.
+
+**Classification** (from `renovate-config.json`, via `config:recommended`'s
+`:semanticPrefixFixDepsChoreOthers` plus this preset's own rules):
+
+| Change | Commit type | Releases on push? |
+|---|---|---|
+| Runtime dep bump (npm `dependencies`, Maven `compile`/`runtime`/`provided`/`import`/`parent`, Dockerfile **final**-stage image) | `fix(deps)` | Only with `RELEASE_DEPS` opt-in below — otherwise yes, same as today |
+| Dev/test/CI-only (npm `devDependencies`, Maven `test`, Dockerfile builder **stage** image, GitHub Actions, lock-file maintenance) | `chore(...)` | Never |
+| Vulnerability remediation (any dep type) | `fix(security)` | Always, immediately |
+| Feature / fix / breaking change you authored | as written | Always, immediately |
+
+**Opt in** to batching routine `fix(deps)` commits into one weekly patch release
+instead of releasing on every dependency merge:
+
+1. Add a `schedule` trigger to the caller workflow, alongside `push`:
+
+   ```yaml
+   on:
+     push:
+       branches: [main, beta]
+     schedule:
+       - cron: '0 9 * * 1' # Mon 09:00 UTC — weekly dependency roll-up
+   ```
+
+2. Use a `.releaserc.js` (not `.releaserc.json`) so the suppression can read
+   `RELEASE_DEPS` at load time:
+
+   ```js
+   // Runtime dep bumps (fix(deps)) are suppressed on ordinary pushes, then
+   // promoted to a single patch by the weekly RELEASE_DEPS run. fix(security)
+   // and scopeless code fix/feat commits are unaffected by this rule and
+   // release on push as normal. chore(...) (dev/test/CI-only) is never
+   // promoted, so a week with only those changes releases nothing.
+   const releaseDeps = process.env.RELEASE_DEPS === 'true';
+   const depReleaseRules = releaseDeps
+     ? [{ type: 'fix', scope: 'deps', release: 'patch' }]
+     : [{ type: 'fix', scope: 'deps', release: false }];
+
+   module.exports = {
+     branches: ['main'],
+     tagFormat: 'v${version}',
+     plugins: [
+       ['@semantic-release/commit-analyzer', { releaseRules: depReleaseRules }],
+       '@semantic-release/release-notes-generator',
+       ['@semantic-release/github', { successComment: false, failComment: false }],
+       // ...the rest of the repo's existing plugins (changelog, git, npm, ...)
+     ],
+   };
+   ```
+
+A repo that skips step 2 is unaffected: `RELEASE_DEPS` is simply unread, and
+`fix(deps)` keeps releasing on push exactly as it does today. See
+`jabrown93/AURA`'s `.releaserc.js` for a fuller example (it additionally covers
+the version-file/changelog side of a release) — note AURA's version predates
+this convention and also promotes `chore(deps)`/`build(deps)` on its weekly
+run, which would release on a dev-dependency-only week; the `fix(deps)`-only
+rule above is the corrected version.
+
 ## Composite actions
 
 Pinned and consumed the same way as the workflows above, but referenced from a

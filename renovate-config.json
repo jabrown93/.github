@@ -129,7 +129,7 @@
             "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?-(?<compatibility>alpine|debian)(?<build>\\d+)(?:\\.(?<revision>\\d+))?(?:\\.\\d+)?-dev$"
         },
         {
-            "description": "Prioritize and automerge vulnerability remediation PRs",
+            "description": "Prioritize and automerge vulnerability remediation PRs. semanticCommitType/Scope override config:recommended's :semanticPrefixFixDepsChoreOthers default (fix(deps) for a runtime dep, chore for a dev dep) with fix(security) for ANY vulnerability fix regardless of dep type -- consumer repos that batch routine fix(deps) commits into a weekly release (see docker-release.yml/npm-release.yml's RELEASE_DEPS) key that suppression on the literal scope 'deps', so a distinct 'security' scope is what keeps a vulnerability fix releasing immediately instead of being caught by that suppression.",
             "matchJsonata": [
                 "vulnerabilityFixVersion != null"
             ],
@@ -141,7 +141,9 @@
             "prPriority": 10,
             "schedule": [
                 "at any time"
-            ]
+            ],
+            "semanticCommitType": "fix",
+            "semanticCommitScope": "security"
         },
         {
             "description": "Automerge npm devDependencies (minor/patch) directly to main",
@@ -160,6 +162,17 @@
             ],
             "automerge": true,
             "automergeType": "branch"
+        },
+        {
+            "description": "Classify a Dockerfile's FINAL-stage base image as a runtime dependency, not build tooling. The dockerfile manager's default depType split under :semanticPrefixFixDepsChoreOthers types EVERY FROM instruction chore (neither 'final' nor 'stage' is in that preset's fix list), so a base-image bump would otherwise never release on its own -- wrong for 'final', which IS what ships (an intermediate builder 'stage' image correctly stays chore, unmatched by this rule, since it never reaches the runtime image). Sets the same fix/deps typing a runtime language dependency gets, so final-stage bumps participate in both immediate push-triggered releases and the weekly fix(deps) roll-up the same way.",
+            "matchManagers": [
+                "dockerfile"
+            ],
+            "matchDepTypes": [
+                "final"
+            ],
+            "semanticCommitType": "fix",
+            "semanticCommitScope": "deps"
         }
     ]
 }

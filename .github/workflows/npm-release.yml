@@ -26,6 +26,11 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    # Skip only on our own [skip ci] version-bump commits. github.event.head_commit
+    # is unset on non-push events (schedule/dispatch), so this is safe there too.
+    if: >-
+      github.event_name != 'push' ||
+      !contains(github.event.head_commit.message, '[skip ci]')
     permissions:
       contents: write # to be able to publish a GitHub release
       issues: write # to be able to comment on released issues
@@ -60,3 +65,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # Read by a consumer's .releaserc.js to promote suppressed fix(deps)
+          # commits (routine dependency bumps) into a single patch release on
+          # the caller's weekly schedule trigger, instead of on every push. A
+          # consumer without that opt-in config simply ignores this. See the
+          # README's "Weekly dependency releases" section.
+          RELEASE_DEPS: ${{ github.event_name == 'schedule' }}
