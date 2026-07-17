@@ -6,6 +6,8 @@ User-level defaults shared across all `jabrown93` repositories.
   consumed via `"extends": ["github>jabrown93/.github//renovate-config.json"]`.
 - **Reusable GitHub Actions workflows** — in [`.github/workflows/`](.github/workflows),
   consumed via `uses:` (see below).
+- **Composite actions** — in [`.github/actions/`](.github/actions), consumed via
+  `uses:` from a step (see below).
 
 ## Reusable workflows
 
@@ -158,6 +160,108 @@ jobs:
     secrets:
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+```
+
+### `dt-sbom-upload.yml` — upload a CycloneDX SBOM to Dependency-Track
+
+| input | default |
+|---|---|
+| `runs-on` | *(required)* in-cluster runner label, e.g. `arc-oss-homebridge-onkyo` |
+| `artifact-name` | `sbom` (must hold `sbom.cdx.json`) |
+| `project-name` | `github.com/<owner>/<repo>` from GitHub context |
+| `project-version` | the caller's commit SHA |
+| `is-latest` | `'true'` |
+
+The privileged half of the Dependency-Track setup — pair it with the
+[`generate-sbom`](#generate-sbom--cyclonedx-sbom-for-npm--maven--syft) composite
+action, which builds the SBOM on a hosted runner and hands it over as an
+artifact. Only this half touches the cluster: it runs on the caller repo's
+REPO-scoped `arc-oss-<repo>` set, exchanges the run's OIDC token for the DT CI
+key via OpenBao, then POSTs the SBOM.
+
+Project identity comes from **trusted** GitHub context, never from anything the
+generating job produced, so a compromised dependency can't inject values that get
+executed on the cluster runner. Those contexts still resolve to the *caller's*
+repo and SHA under a reusable workflow.
+
+**Never call this from a `pull_request` event** — that would put fork-controlled
+code in reach of the in-cluster runner. Use the advisory
+producer/consumer split for PRs instead.
+
+The caller repo must be in the `dt-sbom-upload` OpenBao role's
+`bound_claims.repository` allowlist **and** have an `arc-oss-<repo>` runner set.
+The OIDC `repository` claim is the caller's repo, so adopting this workflow needs
+no role change. See `jabrown93/homelab` → `docs/dependency-track.md`.
+
+```yaml
+name: Dependency-Track SBOM
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@<sha> # v7.0.0
+      - uses: jabrown93/.github/.github/actions/generate-sbom@<sha> # v1.4.0
+        with:
+          ecosystem: npm
+  upload:
+    needs: sbom
+    uses: jabrown93/.github/.github/workflows/dt-sbom-upload.yml@<sha> # v1.4.0
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      runs-on: arc-oss-<repo>
+```
+
+## Composite actions
+
+Pinned and consumed the same way as the workflows above, but referenced from a
+**step** rather than a job:
+
+```yaml
+uses: jabrown93/.github/.github/actions/<name>@<sha> # v1.4.0
+```
+
+### `generate-sbom` — CycloneDX SBOM for npm / maven / syft
+
+| input | default |
+|---|---|
+| `ecosystem` | *(required)* `npm`, `maven`, or `syft` (filesystem scan) |
+| `sbom-path` | `sbom.cdx.json` |
+| `artifact-name` | `sbom` |
+| `node-version` | `'24'` (ecosystem `npm`) |
+| `cyclonedx-npm-version` | `4.2.1` (ecosystem `npm`) |
+| `java-version` | `'25'` (ecosystem `maven`) |
+| `java-distribution` | `corretto` (ecosystem `maven`) |
+
+Generates the SBOM and uploads it as an artifact. Used by **both** the
+push-to-main `dt-sbom-upload.yml` caller and the advisory PR license check, which
+need an identical SBOM and differ only in what they do with it.
+
+**Always run this on a hosted runner.** `npm ci` and `mvn` execute dependency
+lifecycle scripts and build plugins — that code is untrusted and must never touch
+an in-cluster runner. The action does **not** check out the repo; the caller does,
+so it controls `fetch-depth`.
+
+Maven emits under `target/` per the pom's `cyclonedx-maven-plugin` `outputName`,
+so maven callers pass `sbom-path: target/sbom.cdx.json` — the path is a property
+of the caller's build config, not something the action can infer. The artifact
+still arrives holding `sbom.cdx.json` at its **root** either way, because
+`upload-artifact` flattens a single-file path to its basename. Consumers
+therefore never parameterize the filename.
+
+```yaml
+      - uses: actions/checkout@<sha> # v7.0.0
+      - uses: jabrown93/.github/.github/actions/generate-sbom@<sha> # v1.4.0
+        with:
+          ecosystem: maven
+          sbom-path: target/sbom.cdx.json
 ```
 
 ## Versioning
