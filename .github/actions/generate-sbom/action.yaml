@@ -1,0 +1,135 @@
+---
+# Composite action: generate a CycloneDX SBOM of the checked-out repo's resolved
+# dependencies and upload it as a workflow artifact.
+#
+# Used by BOTH halves of the Dependency-Track setup -- the push-to-main SBOM
+# upload (dt-sbom-upload.yml's caller) and the advisory PR license check -- which
+# need an identical SBOM and differ only in what they do with it. Each OSS repo
+# previously inlined these same steps twice.
+#
+# ALWAYS run this on a hosted runner. `npm ci` and `mvn` execute dependency
+# lifecycle scripts and build plugins; that code is UNTRUSTED and must never
+# touch an in-cluster runner. See github.com/jabrown93/homelab ->
+# docs/dependency-track.md.
+#
+# The caller checks out the repo first, so it controls fetch-depth.
+#
+# The artifact always holds sbom.cdx.json at its ROOT: upload-artifact flattens a
+# single-file path to its basename, so Maven's target/sbom.cdx.json still arrives
+# as sbom.cdx.json for the consumer. Consumers therefore never parameterize the
+# filename -- only this generator knows where the SBOM was written.
+name: Generate CycloneDX SBOM
+description: >-
+  Generate a CycloneDX SBOM of the checked-out repo's resolved dependencies
+  (npm, maven, or a syft filesystem scan) and upload it as a workflow artifact.
+inputs:
+  ecosystem:
+    description: 'Dependency ecosystem: npm, maven, or syft (filesystem scan).'
+    required: true
+  sbom-path:
+    description: >-
+      Path the generator writes the SBOM to. Maven emits under target/ per the
+      pom's cyclonedx-maven-plugin outputName, so maven callers normally pass
+      target/sbom.cdx.json. The path is a property of the caller's build config,
+      not something this action can infer.
+    required: false
+    default: sbom.cdx.json
+  artifact-name:
+    description: Name of the uploaded artifact.
+    required: false
+    default: sbom
+  node-version:
+    description: Node.js version (ecosystem npm).
+    required: false
+    default: '24'
+  cyclonedx-npm-version:
+    description: Version of @cyclonedx/cyclonedx-npm to run (ecosystem npm).
+    required: false
+    default: 4.2.1
+  java-version:
+    description: JDK version (ecosystem maven).
+    required: false
+    default: '25'
+  java-distribution:
+    description: JDK distribution (ecosystem maven).
+    required: false
+    default: corretto
+runs:
+  using: composite
+  steps:
+    - name: Validate ecosystem
+      # Fail loudly here rather than silently uploading nothing: every generate
+      # step below is `if`-gated, so an unknown value would skip them all and
+      # only surface as upload-artifact's if-no-files-found.
+      shell: bash
+      env:
+        ECOSYSTEM: ${{ inputs.ecosystem }}
+      run: |
+        set -euo pipefail
+        case "${ECOSYSTEM}" in
+          npm | maven | syft) ;;
+          *)
+            echo "::error::unsupported ecosystem '${ECOSYSTEM}' (expected: npm, maven, syft)"
+            exit 1
+            ;;
+        esac
+
+    - name: Set up Node.js
+      if: inputs.ecosystem == 'npm'
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+
+    - name: Install dependencies
+      if: inputs.ecosystem == 'npm'
+      shell: bash
+      run: npm ci
+
+    - name: Generate CycloneDX SBOM (npm)
+      if: inputs.ecosystem == 'npm'
+      shell: bash
+      env:
+        CYCLONEDX_NPM_VERSION: ${{ inputs.cyclonedx-npm-version }}
+        SBOM_PATH: ${{ inputs.sbom-path }}
+      run: |
+        set -euo pipefail
+        # --ignore-npm-errors: a messy dependency tree (an invalid peer) must not
+        # abort generation.
+        npx --yes "@cyclonedx/cyclonedx-npm@${CYCLONEDX_NPM_VERSION}" \
+          --ignore-npm-errors \
+          --output-format JSON \
+          --output-file "${SBOM_PATH}"
+
+    - name: Set up JDK
+      if: inputs.ecosystem == 'maven'
+      uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+      with:
+        distribution: ${{ inputs.java-distribution }}
+        java-version: ${{ inputs.java-version }}
+        cache: maven
+
+    - name: Generate CycloneDX SBOM (maven)
+      if: inputs.ecosystem == 'maven'
+      shell: bash
+      # Aggregate BOM so a multi-module build reports one SBOM for the whole
+      # reactor. Output name/format come from the pom's plugin configuration.
+      run: mvn -B cyclonedx:makeAggregateBom
+
+    - name: Generate CycloneDX SBOM (syft)
+      if: inputs.ecosystem == 'syft'
+      uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+      with:
+        path: .
+        format: cyclonedx-json
+        output-file: ${{ inputs.sbom-path }}
+        # This action uploads its own artifact under a generated name by default;
+        # the step below owns the upload so the name is stable for consumers.
+        upload-artifact: false
+
+    - name: Upload SBOM artifact
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: ${{ inputs.artifact-name }}
+        if-no-files-found: error
+        path: ${{ inputs.sbom-path }}
