@@ -200,6 +200,20 @@
             ],
             "semanticCommitType": "fix",
             "semanticCommitScope": "security"
+        },
+        {
+            "description": "Group the vitest monorepo packages so vitest, @vitest/coverage-v8, and @vitest/ui bump together — mismatched versions hit peer-dependency ERESOLVE conflicts (e.g. pxs-mappers PR #324, #357)",
+            "matchManagers": [
+                "npm"
+            ],
+            "matchPackageNames": [
+                "vitest",
+                "@vitest/**"
+            ],
+            "groupName": "vitest monorepo",
+            "groupSlug": "vitest-monorepo",
+            "separateMajorMinor": false,
+            "separateMinorPatch": false
         }
     ]
 }
