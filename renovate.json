@@ -2,24 +2,5 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>jabrown93/.github:renovate-config"
-  ],
-  "packageRules": [
-    {
-      "description": "Cut a release for GitHub Actions bumps, but not for this repo's CI-only tooling. The action SHAs pinned inside the reusable workflows ARE this repo's product -- a bump to one changes what every consumer executes, so it must ship (v1.1.0 was exactly such a bump). Labelling them `fix` makes semantic-release cut a patch via commit-analyzer's DEFAULT rules, so .releaserc.json needs no releaseRules override. Everything else -- the semantic-release devDependencies in package.json, and the weekly `chore(deps): lock file maintenance` commit from :maintainLockFilesWeekly -- keeps the preset's default `chore` type and does NOT release, because neither changes anything a consumer runs; releasing them would spam a no-op Renovate PR into every consuming repo. This also fails safe when Renovate combines upgrades into one branch: it picks the highest-priority type among them (chore < ci < build < fix < feat), so a branch mixing an action bump with a devDependency bump still releases. The inverse (leaving actions as `chore` and marking npm `ci`) would let `ci` outrank `chore` and swallow an action bump into a non-releasing commit. Keep this in the repo config, NOT in renovate-config.json: the shared preset is consumed by every repo, and there an action bump should not force a release. It is appended after the preset's packageRules, so it wins over `:semanticPrefixFixDepsChoreOthers` (matchPackageNames ['*'] -> chore) from config:recommended.",
-      "matchManagers": [
-        "github-actions"
-      ],
-      "semanticCommitType": "fix"
-    },
-    {
-      "description": "Undo the rule above for release.yml, the only workflow here that is NOT reusable: it runs `on: push` for this repo's own versioning and no consumer can call it, so bumping an action inside it changes nothing a consumer executes and must not cut a release. Without this, adding an action used ONLY by release.yml would reintroduce exactly the no-op releases the rule above avoids. This composes correctly with grouped branches rather than defeating them: today `actions/checkout` and `actions/setup-node` appear in BOTH release.yml and the reusable workflows, so a bump extracts one dep instance per file -- the reusable instances keep `fix`, this one gets `chore` -- and generateBranchConfig picks the highest-priority type among the grouped upgrades (chore < ci < build < fix < feat), so the combined commit is still `fix` and still releases. Only an action exclusive to release.yml stays `chore` and stays silent, which is the intent. Deliberately a deny-list of the one non-reusable file rather than an allow-list of the reusable ones: a newly added reusable workflow then releases by default, instead of silently never releasing until someone remembers to extend a list.",
-      "matchManagers": [
-        "github-actions"
-      ],
-      "matchFileNames": [
-        ".github/workflows/release.yml"
-      ],
-      "semanticCommitType": "chore"
-    }
   ]
 }
