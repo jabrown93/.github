@@ -6,9 +6,10 @@
         ":pinDevDependencies",
         "helpers:pinGitHubActionDigests",
         "abandonments:recommended",
-        "npm:unpublishSafe",
-        ":rebaseStalePrs",
+        "security:minimumReleaseAgeNpm",
         ":automergeMinor",
+        ":automergeDigest",
+        ":automergeBranch",
         ":maintainLockFilesWeekly",
         ":automergeRequireAllStatusChecks",
         ":combinePatchMinorReleases",
@@ -18,15 +19,13 @@
         ":enableRenovate",
         ":ignoreUnstable",
         "customManagers:mavenPropertyVersions",
-        "mergeConfidence:all-badges",
-        "preview:dockerVersions",
         "customManagers:tfvarsVersions",
         "customManagers:tsconfigNodeVersions"
     ],
     "osvVulnerabilityAlerts": true,
     "vulnerabilityAlerts": {
         "automerge": true,
-        "labels": [
+        "addLabels": [
             "security"
         ]
     },
@@ -35,22 +34,32 @@
     "semanticCommits": "enabled",
     "commitBodyTable": true,
     "prHourlyLimit": 10,
+    "minimumReleaseAge": "3 days",
     "dependencyDashboardOSVVulnerabilitySummary": "all",
-    "automergeType": "pr",
     "automergeStrategy": "squash",
     "platformCommit": "enabled",
-    "regexManagers": [
+    "customManagers": [
         {
-            "fileMatch": [
-                "^.*$"
+            "customType": "regex",
+            "description": "Generic inline-comment convention: `<value> # renovate <datasource> <depName>`. Scoped to the file types that actually carry it; the previous `^.*$` pattern re-read every file in every repo on every run and could false-positive on any line that happened to end in a `# renovate ...` comment.",
+            "managerFilePatterns": [
+                "/(^|/)Dockerfile[^/]*$/",
+                "/(^|/)[^/]+\\.(env|sh|bash|zsh)$/",
+                "/(^|/)[^/]+\\.ya?ml$/",
+                "/(^|/)[^/]+\\.tfvars$/"
             ],
             "matchStrings": [
                 "[\"']{0,1}(?<currentValue>[^\\s\"']*)[\"']{0,1}\\s+#\\s+(renovate\\s+)(?<datasource>[^\\s\"']+)\\s+(?<depName>[^\\s\"']+)"
             ]
         },
         {
-            "fileMatch": [
-                "^.*$"
+            "customType": "regex",
+            "description": "Generic inline-comment convention for docker images: `<image>:<tag> # renovate`. Same file scoping rationale as the manager above.",
+            "managerFilePatterns": [
+                "/(^|/)Dockerfile[^/]*$/",
+                "/(^|/)[^/]+\\.(env|sh|bash|zsh)$/",
+                "/(^|/)[^/]+\\.ya?ml$/",
+                "/(^|/)[^/]+\\.tfvars$/"
             ],
             "datasourceTemplate": "docker",
             "matchStrings": [
@@ -58,10 +67,11 @@
             ]
         },
         {
+            "customType": "regex",
             "description": "Route jabrown93/ci reusable-workflow and composite-action refs to their PER-COMPONENT tag stream. jabrown93/ci publishes component-prefixed tags (workflows-v*, generate-sbom-v*, codeql-v*, node-build-v*, stale-v*, release-checkout-v*, ...); a consumer pins a ref by digest with a matching `# <component>-vX.Y.Z` comment. The component is captured generically ([a-z][a-z0-9-]*) so a newly added component routes automatically with no edit here. The built-in github-actions manager sees only the repo `jabrown93/ci` and would collapse every component into one version stream (and mis-sort the prefixed tags as plain semver), so it is disabled for that repo (packageRule below) and this manager owns those refs: it keys each dep on its component (distinct depName -> separate PRs), looks up github-tags on jabrown93/ci, and constrains the candidate versions to that component's prefix via extractVersionTemplate, so a workflows ref can never bump onto a generate-sbom tag. Currently matches nothing until consumers are cut over from jabrown93/.github, so it is safe to land ahead of that.",
-            "fileMatch": [
-                "(^|/)\\.github/workflows/[^/]+\\.ya?ml$",
-                "(^|/)action\\.ya?ml$"
+            "managerFilePatterns": [
+                "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/",
+                "/(^|/)action\\.ya?ml$/"
             ],
             "matchStrings": [
                 "uses:\\s+jabrown93/ci/(?<packagePath>\\S+)@(?<currentDigest>[0-9a-f]{40})\\s*#\\s*(?<component>[a-z][a-z0-9-]*)-v(?<currentValue>[0-9][^\\s]*)"
@@ -81,7 +91,7 @@
     },
     "packageRules": [
         {
-            "description": "Disable the built-in github-actions manager for jabrown93/ci refs; the per-component regexManager above owns them. Without this, both managers extract the same `uses:` line and the github-actions one -- which resolves the whole repo's tags as a single stream -- would open duplicate or cross-component PRs.",
+            "description": "Disable the built-in github-actions manager for jabrown93/ci refs; the per-component custom manager above owns them. Without this, both managers extract the same `uses:` line and the github-actions one -- which resolves the whole repo's tags as a single stream -- would open duplicate or cross-component PRs.",
             "matchManagers": [
                 "github-actions"
             ],
@@ -92,52 +102,48 @@
         },
         {
             "matchUpdateTypes": [
-                "major"
-            ],
-            "labels": [
-                "renovate-major",
-                "needs-review"
-            ]
-        },
-        {
-            "matchUpdateTypes": [
                 "patch"
             ],
-            "labels": [
+            "addLabels": [
                 "renovate-patch"
-            ],
-            "automerge": true,
-            "automergeType": "branch"
+            ]
         },
         {
             "matchUpdateTypes": [
                 "minor"
             ],
-            "labels": [
+            "addLabels": [
                 "renovate-minor"
-            ],
-            "automerge": true,
-            "automergeType": "branch"
+            ]
         },
         {
-            "description": "Auto-merge dhi.io (Docker Hardened Images) digest re-patches across all repos. dhi.io continuously re-patches the same version tag for CVEs, so the pinned digest is the only signal a fix shipped; digest is its own updateType and is NOT matched by the generic minor/patch rules above. Together with those rules this completes non-major auto-merge for dhi.io -- major bumps still require review (renovate-major/needs-review). Gated on all status checks via :automergeRequireAllStatusChecks.",
-            "matchDatasources": [
-                "docker"
-            ],
-            "matchPackageNames": [
-                "/^dhi\\.io//"
-            ],
+            "description": "Collapse digest churn into a single branch. Nearly every image and action in these repos is digest-pinned (pinDigests on the docker managers plus helpers:pinGitHubActionDigests), and upstreams that re-patch a tag in place -- dhi.io, cloudnative-pg, lscr.io -- produce a steady stream of digest-only updates that are individually meaningless. Automerge comes from :automergeDigest. minimumReleaseAge is cleared because a digest re-patch IS the CVE fix; holding it three days would defeat the point, and a digest update frequently carries no release timestamp for the check to read anyway. A repo that wants a narrower grouping (see homelab's ghcr.io/jabrown93 rule) overrides this with a later rule of its own.",
             "matchUpdateTypes": [
                 "digest"
             ],
-            "labels": [
+            "addLabels": [
                 "renovate-digest"
             ],
-            "automerge": true,
-            "automergeType": "branch"
+            "groupName": "digest updates",
+            "minimumReleaseAge": null
         },
         {
-            "description": "Track BOTH the application version and the base-OS version in compound Docker tags like 'python:3.14.6-alpine3.24'. Default docker versioning only bumps the leading version and pins the whole suffix, so OS releases (e.g. -alpine3.24 -> -alpine3.25) are never proposed. This regex versioning maps the app version (major.minor[.patch]) plus the OS version (major[.minor]) into the comparable release array, so an increase in EITHER triggers an update; 'compatibility' (alpine|debian) is locked so a dependency never switches OS family -- an alpine tag is never updated to a debian tag and vice versa (the debian variant is simply ignored for an alpine image, and vice versa). OS bumps surface as patch-type updates (build/revision are handled like patch) and thus auto-merge via the patch rule above, gated on all status checks. matchCurrentValue is kept in lock-step with the versioning regex (same app/OS segment shape, anchored) so it only selects tags this versioning can parse; plain or non-conforming tags (e.g. 3.14.6, latest, 3.14.6-slim) keep default docker versioning. The OS accepts 1-3 segments: major, major.minor, or major.minor.patch -- but because Renovate's regex versioning exposes only 5 comparable numeric slots (major/minor/patch consumed by the app), the OS uses the remaining two (build=OS-major, revision=OS-minor) and a 3rd OS segment is matched but NOT independently compared (so an OS patch-only re-release such as alpine3.20.3 -> alpine3.20.5 is not flagged; OS major/minor still are). Full independent OS-patch tracking would require splitting into two dependencies via custom managers.",
+            "description": "Automerge the initial digest pin Renovate seeds for a previously tag-only dependency. `pinDigest` is its own updateType and is NOT covered by :automergeMinor (which does cover plain `pin`), so without this every newly pinned image or action leaves a PR sitting forever. Pinning an already-deployed tag to the digest it currently resolves to is a no-op at runtime.",
+            "matchUpdateTypes": [
+                "pinDigest"
+            ],
+            "automerge": true,
+            "minimumReleaseAge": null
+        },
+        {
+            "description": "lockFileMaintenance regenerates the lock file from ranges already in the manifest, so there is no single release whose age the root three-day hold could check. Clearing it keeps the weekly run (:maintainLockFilesWeekly) from being suppressed.",
+            "matchUpdateTypes": [
+                "lockFileMaintenance"
+            ],
+            "minimumReleaseAge": null
+        },
+        {
+            "description": "Track BOTH the application version and the base-OS version in compound Docker tags like 'python:3.14.6-alpine3.24'. Default docker versioning only bumps the leading version and pins the whole suffix, so OS releases (e.g. -alpine3.24 -> -alpine3.25) are never proposed. This regex versioning maps the app version (major.minor[.patch]) plus the OS version (major[.minor]) into the comparable release array, so an increase in EITHER triggers an update; 'compatibility' (alpine|debian) is locked so a dependency never switches OS family -- an alpine tag is never updated to a debian tag and vice versa (the debian variant is simply ignored for an alpine image, and vice versa). OS bumps surface as patch-type updates (build/revision are handled like patch) and thus auto-merge via :automergeMinor, gated on all status checks. matchCurrentValue is kept in lock-step with the versioning regex (same app/OS segment shape, anchored) so it only selects tags this versioning can parse; plain or non-conforming tags (e.g. 3.14.6, latest, 3.14.6-slim) keep default docker versioning. The OS accepts 1-3 segments: major, major.minor, or major.minor.patch -- but because Renovate's regex versioning exposes only 5 comparable numeric slots (major/minor/patch consumed by the app), the OS uses the remaining two (build=OS-major, revision=OS-minor) and a 3rd OS segment is matched but NOT independently compared (so an OS patch-only re-release such as alpine3.20.3 -> alpine3.20.5 is not flagged; OS major/minor still are). Full independent OS-patch tracking would require splitting into two dependencies via custom managers.",
             "matchDatasources": [
                 "docker"
             ],
@@ -145,7 +151,7 @@
             "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?-(?<compatibility>alpine|debian)(?<build>\\d+)(?:\\.(?<revision>\\d+))?(?:\\.\\d+)?$"
         },
         {
-            "description": "The -dev sibling of the compound-tag rule above, for Docker Hardened Image tags that append a build variant after the base-OS version: base images like dhi.io/alpine-base:3.23-alpine3.23-dev (where the leading field IS the OS version) AND application images like dhi.io/golang:1.26-debian13-dev (where 1.26 is the app version and debian13 is an independent base; used at docker/wol-proxy/Dockerfile). The compound rule above is anchored right after the OS version, so the trailing -dev makes it skip these; default docker versioning then pins the ENTIRE '<family><osver>-dev' suffix and finds only digest re-patches -- which freezes the version for base images (the OS is echoed into the suffix and moves with the leading field, so 3.24-alpine3.24-dev is a different suffix) and freezes the OS for app images (1.26-debian14-dev is a different suffix). This rule captures the app/base version into major.minor[.patch] AND the OS version into build[.revision], so an increase in EITHER is proposed (base: alpine-base 3.23->3.24; app: golang 1.26->1.27 and debian13->debian14). It locks the OS FAMILY as 'compatibility' so a debian image never crosses to alpine or vice-versa -- DHI ships BOTH families from one app repo (e.g. dhi.io/golang publishes 1.26-debian13-dev and 1.26-alpine3.22-dev), and crossing would swap apt/glibc for apk/musl. It hardcodes the -dev variant so a builder never crosses to a non-dev/distroless variant. Scoped to dhi.io/* because it targets DHI's <ver>-<family><osver>-<variant> tag scheme; family+variant+OS are all pinned so it is safe unscoped, but dhi.io/* keeps the blast radius contained. OS bumps surface as patch-type updates (build/revision) and auto-merge via the patch rule above, gated on all status checks. The variant MUST be a literal, not an alternation: a captured or optional variant would let -dev cross to -runtime. Add a near-identical sibling with the literal swapped if another DHI variant (runtime, fips, ...) is adopted. Non-variant compound tags (python:3.14.6-alpine3.24, dhi.io/openbao:2.5.5-debian13) keep the compound rule above.",
+            "description": "The -dev sibling of the compound-tag rule above, for Docker Hardened Image tags that append a build variant after the base-OS version: base images like dhi.io/alpine-base:3.23-alpine3.23-dev (where the leading field IS the OS version) AND application images like dhi.io/golang:1.26-debian13-dev (where 1.26 is the app version and debian13 is an independent base; used at docker/wol-proxy/Dockerfile). The compound rule above is anchored right after the OS version, so the trailing -dev makes it skip these; default docker versioning then pins the ENTIRE '<family><osver>-dev' suffix and finds only digest re-patches -- which freezes the version for base images (the OS is echoed into the suffix and moves with the leading field, so 3.24-alpine3.24-dev is a different suffix) and freezes the OS for app images (1.26-debian14-dev is a different suffix). This rule captures the app/base version into major.minor[.patch] AND the OS version into build[.revision], so an increase in EITHER is proposed (base: alpine-base 3.23->3.24; app: golang 1.26->1.27 and debian13->debian14). It locks the OS FAMILY as 'compatibility' so a debian image never crosses to alpine or vice-versa -- DHI ships BOTH families from one app repo (e.g. dhi.io/golang publishes 1.26-debian13-dev and 1.26-alpine3.22-dev), and crossing would swap apt/glibc for apk/musl. It hardcodes the -dev variant so a builder never crosses to a non-dev/distroless variant. Scoped to dhi.io/* because it targets DHI's <ver>-<family><osver>-<variant> tag scheme; family+variant+OS are all pinned so it is safe unscoped, but dhi.io/* keeps the blast radius contained. OS bumps surface as patch-type updates (build/revision) and auto-merge via :automergeMinor, gated on all status checks. The variant MUST be a literal, not an alternation: a captured or optional variant would let -dev cross to -runtime. Add a near-identical sibling with the literal swapped if another DHI variant (runtime, fips, ...) is adopted. Non-variant compound tags (python:3.14.6-alpine3.24, dhi.io/openbao:2.5.5-debian13) keep the compound rule above.",
             "matchDatasources": [
                 "docker"
             ],
@@ -154,52 +160,6 @@
             ],
             "matchCurrentValue": "/^\\d+\\.\\d+(?:\\.\\d+)?-(?:alpine|debian)\\d+(?:\\.\\d+){0,2}-dev$/",
             "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?-(?<compatibility>alpine|debian)(?<build>\\d+)(?:\\.(?<revision>\\d+))?(?:\\.\\d+)?-dev$"
-        },
-        {
-            "description": "Automerge npm devDependencies (minor/patch) directly to main",
-            "matchManagers": [
-                "npm"
-            ],
-            "matchDatasources": [
-                "npm"
-            ],
-            "matchDepTypes": [
-                "devDependencies"
-            ],
-            "matchUpdateTypes": [
-                "minor",
-                "patch"
-            ],
-            "automerge": true,
-            "automergeType": "branch"
-        },
-        {
-            "description": "Classify a Dockerfile's FINAL-stage base image as a runtime dependency, not build tooling. The dockerfile manager's default depType split under :semanticPrefixFixDepsChoreOthers types EVERY FROM instruction chore (neither 'final' nor 'stage' is in that preset's fix list), so a base-image bump would otherwise never release on its own -- wrong for 'final', which IS what ships (an intermediate builder 'stage' image correctly stays chore, unmatched by this rule, since it never reaches the runtime image). Sets the same fix/deps typing a runtime language dependency gets, so final-stage bumps participate in both immediate push-triggered releases and the weekly fix(deps) roll-up the same way. Deliberately ordered BEFORE the vulnerability rule below: Renovate merges matching packageRules in array order with later rules winning on conflicting keys, so a vulnerability fix that happens to target a final-stage image must be classified here first and then have the vulnerability rule's fix(security) win last -- swapping the order would let this rule's fix(deps) overwrite fix(security) and suppress an immediate security release.",
-            "matchManagers": [
-                "dockerfile"
-            ],
-            "matchDepTypes": [
-                "final"
-            ],
-            "semanticCommitType": "fix",
-            "semanticCommitScope": "deps"
-        },
-        {
-            "description": "Prioritize and automerge vulnerability remediation PRs. Deliberately the LAST packageRule (Renovate merges matches in array order, later wins) so its semanticCommitType/Scope override every other classification in this file, including the final-stage-image rule above -- a vulnerability fix always commits fix(security) regardless of what dep type it happens to touch. This overrides config:recommended's :semanticPrefixFixDepsChoreOthers default (fix(deps) for a runtime dep, chore for a dev dep): consumer repos that batch routine fix(deps) commits into a weekly release (see docker-release.yml/npm-release.yml's RELEASE_DEPS) key that suppression on the literal scope 'deps', so the distinct 'security' scope is what keeps a vulnerability fix releasing immediately instead of being caught by that suppression.",
-            "matchJsonata": [
-                "vulnerabilityFixVersion != null"
-            ],
-            "labels": [
-                "security"
-            ],
-            "automerge": true,
-            "automergeType": "pr",
-            "prPriority": 10,
-            "schedule": [
-                "at any time"
-            ],
-            "semanticCommitType": "fix",
-            "semanticCommitScope": "security"
         },
         {
             "description": "Group the vitest monorepo packages so vitest, @vitest/coverage-v8, and @vitest/ui bump together — mismatched versions hit peer-dependency ERESOLVE conflicts (e.g. pxs-mappers PR #324, #357)",
@@ -214,6 +174,49 @@
             "groupSlug": "vitest-monorepo",
             "separateMajorMinor": false,
             "separateMinorPatch": false
+        },
+        {
+            "description": "Classify a Dockerfile's FINAL-stage base image as a runtime dependency, not build tooling. The dockerfile manager's default depType split under :semanticPrefixFixDepsChoreOthers types EVERY FROM instruction chore (neither 'final' nor 'stage' is in that preset's fix list), so a base-image bump would otherwise never release on its own -- wrong for 'final', which IS what ships (an intermediate builder 'stage' image correctly stays chore, unmatched by this rule, since it never reaches the runtime image). Sets the same fix/deps typing a runtime language dependency gets, so final-stage bumps participate in both immediate push-triggered releases and the weekly fix(deps) roll-up the same way. Deliberately ordered BEFORE the vulnerability rule below: Renovate merges matching packageRules in array order with later rules winning on conflicting keys, so a vulnerability fix that happens to target a final-stage image must be classified here first and then have the vulnerability rule's fix(security) win last -- swapping the order would let this rule's fix(deps) overwrite fix(security) and suppress an immediate security release.",
+            "matchManagers": [
+                "dockerfile"
+            ],
+            "matchDepTypes": [
+                "final"
+            ],
+            "semanticCommitType": "fix",
+            "semanticCommitScope": "deps"
+        },
+        {
+            "description": "Prioritize and automerge vulnerability remediation PRs. Ordered second-to-LAST (Renovate merges matches in array order, later wins) so its semanticCommitType/Scope override every other classification in this file, including the final-stage-image rule above -- a vulnerability fix always commits fix(security) regardless of what dep type it happens to touch. This overrides config:recommended's :semanticPrefixFixDepsChoreOthers default (fix(deps) for a runtime dep, chore for a dev dep): consumer repos that batch routine fix(deps) commits into a weekly release (see docker-release.yml/npm-release.yml's RELEASE_DEPS) key that suppression on the literal scope 'deps', so the distinct 'security' scope is what keeps a vulnerability fix releasing immediately instead of being caught by that suppression. minimumReleaseAge is cleared so the root three-day hold never delays a fix, and groupName is cleared so a security bump is pulled out of the shared 'digest updates' branch and raised on its own. Only the major rule below outranks this one.",
+            "matchJsonata": [
+                "vulnerabilityFixVersion != null"
+            ],
+            "addLabels": [
+                "security"
+            ],
+            "automerge": true,
+            "automergeType": "pr",
+            "prPriority": 10,
+            "schedule": [
+                "at any time"
+            ],
+            "minimumReleaseAge": null,
+            "groupName": null,
+            "semanticCommitType": "fix",
+            "semanticCommitScope": "security"
+        },
+        {
+            "description": "A major version bump ALWAYS gets a human pull request. This must stay the LAST rule in the file: Renovate applies packageRules in array order with later rules winning on conflicting keys (and applies them a second time after the updateType config is merged -- lib/workers/repository/updates/flatten.ts), so its position here is what makes it override the vulnerability rule above. Without it, a security advisory whose lowest fixing version happens to be a major would auto-merge, since that rule sets automerge unconditionally. It also overrides :automergeBranch back to a PR: a major landing directly on the default branch with no PR is precisely the case where a human needs to read the changelog first. Grouping is cleared so a major is never buried inside the shared digest branch.",
+            "matchUpdateTypes": [
+                "major"
+            ],
+            "addLabels": [
+                "renovate-major",
+                "needs-review"
+            ],
+            "automerge": false,
+            "automergeType": "pr",
+            "groupName": null
         }
     ]
 }
