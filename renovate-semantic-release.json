@@ -1,0 +1,13 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "description": "Dependency constraints for repos that release via semantic-release. Extend alongside renovate-config, not instead of it.",
+    "packageRules": [
+        {
+            "description": "Pinned to v9: v10 builds writerOpts from @conventional-changelog/template JS functions that require conventional-changelog-writer v9, but @semantic-release/release-notes-generator pins conventional-changelog-writer ^8 and silently ignores them, producing heading-only CHANGELOG entries with no commit bodies. Unpin once release-notes-generator supports writer v9.",
+            "matchPackageNames": [
+                "conventional-changelog-conventionalcommits"
+            ],
+            "allowedVersions": "<10.0.0"
+        }
+    ]
+}
