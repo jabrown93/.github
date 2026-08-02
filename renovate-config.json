@@ -38,6 +38,7 @@
     "dependencyDashboardOSVVulnerabilitySummary": "all",
     "automergeStrategy": "squash",
     "platformCommit": "enabled",
+    "pinDigests": true,
     "customManagers": [
         {
             "customType": "regex",
@@ -117,7 +118,7 @@
             ]
         },
         {
-            "description": "Collapse digest churn into a single branch. Nearly every image and action in these repos is digest-pinned (pinDigests on the docker managers plus helpers:pinGitHubActionDigests), and upstreams that re-patch a tag in place -- dhi.io, cloudnative-pg, lscr.io -- produce a steady stream of digest-only updates that are individually meaningless. Automerge comes from :automergeDigest. minimumReleaseAge is cleared because a digest re-patch IS the CVE fix; holding it three days would defeat the point, and a digest update frequently carries no release timestamp for the check to read anyway. A repo that wants a narrower grouping (see homelab's ghcr.io/jabrown93 rule) overrides this with a later rule of its own.",
+            "description": "Collapse digest churn into a single branch. Every image and action in these repos is digest-pinned (top-level pinDigests above plus helpers:pinGitHubActionDigests; a repo can still opt a package out with a later pinDigests:false rule), and upstreams that re-patch a tag in place -- dhi.io, cloudnative-pg, lscr.io -- produce a steady stream of digest-only updates that are individually meaningless. Automerge comes from :automergeDigest. minimumReleaseAge is cleared because a digest re-patch IS the CVE fix; holding it three days would defeat the point, and a digest update frequently carries no release timestamp for the check to read anyway. A repo that wants a narrower grouping (see homelab's ghcr.io/jabrown93 rule) overrides this with a later rule of its own.",
             "matchUpdateTypes": [
                 "digest"
             ],
