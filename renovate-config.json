@@ -38,6 +38,7 @@
     "dependencyDashboardOSVVulnerabilitySummary": "all",
     "automergeStrategy": "squash",
     "platformCommit": "enabled",
+    "pinDigests": true,
     "customManagers": [
         {
             "customType": "regex",
@@ -117,7 +118,7 @@
             ]
         },
         {
-            "description": "Collapse digest churn into a single branch. Nearly every image and action in these repos is digest-pinned (pinDigests on the docker managers plus helpers:pinGitHubActionDigests), and upstreams that re-patch a tag in place -- dhi.io, cloudnative-pg, lscr.io -- produce a steady stream of digest-only updates that are individually meaningless. Automerge comes from :automergeDigest. minimumReleaseAge is cleared because a digest re-patch IS the CVE fix; holding it three days would defeat the point, and a digest update frequently carries no release timestamp for the check to read anyway. A repo that wants a narrower grouping (see homelab's ghcr.io/jabrown93 rule) overrides this with a later rule of its own.",
+            "description": "Collapse digest churn into a single branch. Every image and action in these repos is digest-pinned (top-level pinDigests above plus helpers:pinGitHubActionDigests; a repo can still opt a package out with a later pinDigests:false rule), and upstreams that re-patch a tag in place -- dhi.io, cloudnative-pg, lscr.io -- produce a steady stream of digest-only updates that are individually meaningless. Automerge comes from :automergeDigest. minimumReleaseAge is cleared because a digest re-patch IS the CVE fix; holding it three days would defeat the point, and a digest update frequently carries no release timestamp for the check to read anyway. A repo that wants a narrower grouping (see homelab's ghcr.io/jabrown93 rule) overrides this with a later rule of its own.",
             "matchUpdateTypes": [
                 "digest"
             ],
@@ -139,6 +140,14 @@
             "description": "lockFileMaintenance regenerates the lock file from ranges already in the manifest, so there is no single release whose age the root three-day hold could check. Clearing it keeps the weekly run (:maintainLockFilesWeekly) from being suppressed.",
             "matchUpdateTypes": [
                 "lockFileMaintenance"
+            ],
+            "minimumReleaseAge": null
+        },
+        {
+            "description": "Trusted publishers: clear the 3-day minimumReleaseAge for ghcr.io/jabrown93/** (self-published -- holding our own CI's output three days serves nothing) and dhi.io/** (Docker Hardened Images; releases are CVE-driven and best taken promptly). Digest and pinDigest updates were already exempt via the rules above; this extends the exemption to tag/version bumps for these prefixes. Unscoped by datasource so it also reaches OCI Helm charts and any other datasource carrying these names.",
+            "matchPackageNames": [
+                "/^ghcr\\.io/jabrown93//",
+                "/^dhi\\.io//"
             ],
             "minimumReleaseAge": null
         },
