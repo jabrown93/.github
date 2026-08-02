@@ -69,20 +69,18 @@
         },
         {
             "customType": "regex",
-            "description": "Route jabrown93/ci reusable-workflow and composite-action refs to their PER-COMPONENT tag stream. jabrown93/ci publishes component-prefixed tags (workflows-v*, generate-sbom-v*, codeql-v*, node-build-v*, stale-v*, release-checkout-v*, ...); a consumer pins a ref by digest with a matching `# <component>-vX.Y.Z` comment. The component is captured generically ([a-z][a-z0-9-]*) so a newly added component routes automatically with no edit here. The built-in github-actions manager sees only the repo `jabrown93/ci` and would collapse every component into one version stream (and mis-sort the prefixed tags as plain semver), so it is disabled for that repo (packageRule below) and this manager owns those refs: it keys each dep on its component (distinct depName -> separate PRs), looks up github-tags on jabrown93/ci, and constrains the candidate versions to that component's prefix via extractVersionTemplate, so a workflows ref can never bump onto a generate-sbom tag. Currently matches nothing until consumers are cut over from jabrown93/.github, so it is safe to land ahead of that.",
+            "description": "Route jabrown93/ci reusable-workflow and composite-action refs to their PER-COMPONENT tag stream. jabrown93/ci publishes component-prefixed tags (workflows-v*, generate-sbom-v*, codeql-v*, node-build-v*, stale-v*, release-checkout-v*, ...); a consumer pins a ref by digest with a matching `# <component>-vX.Y.Z` comment. The component is captured generically ([a-z][a-z0-9-]*) so a newly added component routes automatically with no edit here. The built-in github-actions manager sees only the repo `jabrown93/ci` and would collapse every component into one version stream (and mis-sort the prefixed tags as plain semver), so it is disabled for that repo (packageRule below) and this manager owns those refs: it keys each dep on its component (distinct depName -> separate PRs), looks up github-tags on jabrown93/ci, and constrains candidate versions to that component's prefix via the versioning regex (a workflows ref can never bump onto a generate-sbom tag, because other components' tags fail the regex and are treated as invalid). currentValue is the FULL prefixed tag (codeql-v1.0.4), captured with a nested component group, for two reasons: (1) github-tags getDigest is called with newValue, so newValue must be a real tag name -- the old extractVersionTemplate stripped the prefix and broke digest lookup; (2) default in-place autoreplace can then substitute currentValue and currentDigest directly inside the matched string. Deliberately NO autoReplaceStringTemplate: custom capture groups like component are extraction-time only (renovate persists only validMatchFields onto the dep, lib/modules/manager/custom/regex/utils.ts), so referencing them there renders empty at update time and fails the branch with 'Extracted ... after autoreplace has fewer deps than expected'.",
             "managerFilePatterns": [
                 "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/",
                 "/(^|/)action\\.ya?ml$/"
             ],
             "matchStrings": [
-                "uses:\\s+jabrown93/ci/(?<packagePath>\\S+)@(?<currentDigest>[0-9a-f]{40})\\s*#\\s*(?<component>[a-z][a-z0-9-]*)-v(?<currentValue>[0-9][^\\s]*)"
+                "uses:\\s+jabrown93/ci/\\S+@(?<currentDigest>[0-9a-f]{40})\\s*#\\s*(?<currentValue>(?<component>[a-z][a-z0-9-]*)-v[0-9][^\\s]*)"
             ],
             "datasourceTemplate": "github-tags",
             "depNameTemplate": "jabrown93/ci:{{{component}}}",
             "packageNameTemplate": "jabrown93/ci",
-            "versioningTemplate": "semver",
-            "extractVersionTemplate": "^{{{component}}}-v(?<version>.+)$",
-            "autoReplaceStringTemplate": "uses: jabrown93/ci/{{{packagePath}}}@{{{newDigest}}} # {{{component}}}-v{{{newValue}}}"
+            "versioningTemplate": "regex:^{{{component}}}-v(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?$"
         }
     ],
     "npm": {
@@ -100,6 +98,13 @@
                 "jabrown93/ci"
             ],
             "enabled": false
+        },
+        {
+            "description": "Never digest-pin `uses-with` deps. The github-actions manager extracts version inputs from a `with:` block (e.g. cosign-installer's `cosign-release: v3.1.2` as sigstore/cosign, github-releases datasource) as depType uses-with. The top-level pinDigests:true then demands a pinDigest update and the digest even resolves (tag commit SHA), but a plain version string has no `@digest` syntax to write it into -- the update produces no content change and the whole branch fails with 'Error updating branch: update failure', taking every grouped pin down with it.",
+            "matchDepTypes": [
+                "uses-with"
+            ],
+            "pinDigests": false
         },
         {
             "matchUpdateTypes": [
