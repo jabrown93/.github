@@ -83,6 +83,9 @@
             "versioningTemplate": "regex:^{{{component}}}-v(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?$"
         }
     ],
+    "constraints": {
+        "npm": ">=11.6.2"
+    },
     "npm": {
         "postUpdateOptions": [
             "npmDedupe"
