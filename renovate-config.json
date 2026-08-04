@@ -91,6 +91,10 @@
             "npmDedupe"
         ]
     },
+    "postUpdateOptions": [
+        "gomodTidy",
+        "gomodUpdateImportPaths"
+    ],
     "packageRules": [
         {
             "description": "Disable the built-in github-actions manager for jabrown93/ci refs; the per-component custom manager above owns them. Without this, both managers extract the same `uses:` line and the github-actions one -- which resolves the whole repo's tags as a single stream -- would open duplicate or cross-component PRs.",
