@@ -35,6 +35,13 @@
     "commitBodyTable": true,
     "prHourlyLimit": 10,
     "minimumReleaseAge": "3 days",
+    "logLevelRemap": [
+        {
+            "description": "Demote the minimumReleaseAgeBehaviour=timestamp-optional WARN to INFO so it stops occupying the Dependency Dashboard's Repository Problems section. Only the timestamp-optional path logs at WARN (lookup/filter-checks.ts, update/branch/index.ts); the timestamp-required path logs the same fact at DEBUG, which is why enabling timestamp-optional made a condition that had been true for weeks suddenly visible. The line is emitted once per run, carries no depName (that is in the DEBUG twin, unaffected here) and reports the setting working as intended, so it is noise on the dashboard, not signal. INFO rather than DEBUG keeps it in Loki at the default log level. Renovate remaps the level before bunyan sees the record (logger/renovate-logger.ts) and the ProblemStream is attached at level warn (logger/bunyan.ts), so the demotion is what keeps it off the dashboard.",
+            "matchMessage": "/^Some (?:release|upgrade)\\(s\\) did not have a releaseTimestamp/",
+            "newLogLevel": "info"
+        }
+    ],
     "dependencyDashboardOSVVulnerabilitySummary": "all",
     "automergeStrategy": "squash",
     "platformCommit": "enabled",
