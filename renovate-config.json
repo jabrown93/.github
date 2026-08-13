@@ -183,6 +183,19 @@
             "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?-(?<compatibility>alpine|debian)(?<build>\\d+)(?:\\.(?<revision>\\d+))?(?:\\.\\d+)?-dev$"
         },
         {
+            "description": "Route all docker.io lookups through the homelab Nexus pull-through cache. Every repo extending this preset is renovated by the self-hosted in-cluster instance (autodiscover), so registry.jaredbrown.io -- the host-root /v2 facade over Nexus's dockerhub proxy (jabrown93/homelab argocd/values/nexus.yaml, registry-internal route) -- is always reachable; a hosted Renovate app could NOT resolve it, so this preset assumes self-hosted. The registryUrl path is folded into the repository (getRegistryRepository, lib/modules/datasource/docker/common.ts), so tags/manifests land on /v2/dockerhub/<image>, which the gateway rewrites to /repository/dockerhub/v2/<image>. This sidesteps hub.docker.com's tags API, which 403s anonymous requests past page 11 ('pagination offset too large for anonymous requests') and aborted every large docker.io tag crawl. Renovate consults that API only when the registry host is index.docker.io itself, so via Nexus it is skipped entirely and these releases carry no releaseTimestamp (the registry /v2 API has none) -- with the default minimumReleaseAgeBehaviour=timestamp-required they would sit 'Pending Status Checks' forever, hence timestamp-optional here: this preset's 3-day cook does not apply to docker.io images (digest pinning remains the integrity control; ghcr/lscr/dhi/quay and non-docker datasources keep timestamp-required). The negative matcher keeps every host-prefixed package (ghcr.io/lscr.io/dhi.io/quay.io images and OCI charts) on its own registry. Nexus itself holds the upstream Docker Hub credentials, so the upstream hop is authenticated and rate-limit-covered; the facade serves anonymously. Two properties of this routing: an explicit docker.io/ prefix in a manifest pins the lookup to index.docker.io (the packageName's embedded host beats registryUrls) and silently bypasses this rule, so docker.io images must be written bare; and official single-segment images (python, alpine) work as-is -- Nexus's Docker Hub proxy translates them to library/<name> (verified: /v2/dockerhub/python/tags/list returns library/python's tags).",
+            "matchDatasources": [
+                "docker"
+            ],
+            "matchPackageNames": [
+                "!/^[^/]*[.:][^/]*\\//"
+            ],
+            "registryUrls": [
+                "https://registry.jaredbrown.io/dockerhub"
+            ],
+            "minimumReleaseAgeBehaviour": "timestamp-optional"
+        },
+        {
             "description": "Group the vitest monorepo packages so vitest, @vitest/coverage-v8, and @vitest/ui bump together — mismatched versions hit peer-dependency ERESOLVE conflicts (e.g. pxs-mappers PR #324, #357)",
             "matchManagers": [
                 "npm"
