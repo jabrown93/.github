@@ -183,6 +183,13 @@
             "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)(?:\\.(?<patch>\\d+))?-(?<compatibility>alpine|debian)(?<build>\\d+)(?:\\.(?<revision>\\d+))?(?:\\.\\d+)?-dev$"
         },
         {
+            "description": "Docker releases without a releaseTimestamp are treated as stable instead of pending forever. The docker datasource's ONLY timestamp source is hub.docker.com's tags API (tag_last_pushed), consulted solely for index.docker.io lookups -- ghcr.io/lscr.io/quay.io/dhi.io releases NEVER carry a timestamp (the registry /v2 API has none, and nothing reads org.opencontainers.image.created), and docker.io repos with more than ~1000 tags lose theirs because that API 403s at page 11 ('pagination offset too large for anonymous requests') and authentication cannot fix it: Renovate applies hostRules as Basic auth (lib/util/http/host-rules.ts) but the tags API only honors a JWT from /v2/users/login, which Renovate never obtains (no such exchange anywhere in its source, verified v43.280.0). Under the default minimumReleaseAgeBehaviour=timestamp-required every such release sits 'Pending Status Checks' forever -- observed 2026-08-13 wedging all 36 pending homelab updates including plain ghcr.io tag bumps. timestamp-optional keeps the 3-day cook fully enforced for releases that DO have a timestamp (docker.io repos under ~1000 tags) and waives it only where no timestamp can exist. Scoped to the docker datasource; npm/pypi/terraform/github releases all carry timestamps and keep timestamp-required.",
+            "matchDatasources": [
+                "docker"
+            ],
+            "minimumReleaseAgeBehaviour": "timestamp-optional"
+        },
+        {
             "description": "Group the vitest monorepo packages so vitest, @vitest/coverage-v8, and @vitest/ui bump together — mismatched versions hit peer-dependency ERESOLVE conflicts (e.g. pxs-mappers PR #324, #357)",
             "matchManagers": [
                 "npm"
