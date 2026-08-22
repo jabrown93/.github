@@ -30,7 +30,7 @@
         ]
     },
     "timezone": "America/Los_Angeles",
-    "rangeStrategy": "replace",
+    "rangeStrategy": "pin",
     "semanticCommits": "enabled",
     "commitBodyTable": true,
     "prHourlyLimit": 10,
@@ -220,6 +220,48 @@
             ],
             "semanticCommitType": "fix",
             "semanticCommitScope": "deps"
+        },
+        {
+            "description": "Never pin a peerDependency or an engines constraint. rangeStrategy=pin above is about what WE install; a peerDependency range is a compatibility declaration about what a CONSUMER may install alongside us, and an engines range is the same statement about the runtime. Pinning `typescript: >=5.7.0` to a single version does not make our build stricter -- it makes npm reject every consumer not on exactly that version, and turns a satisfied peer into an ERESOLVE failure. widen is the correct strategy for a peer range: it extends the supported window when a new major appears instead of narrowing it.",
+            "matchManagers": [
+                "npm"
+            ],
+            "matchDepTypes": [
+                "peerDependencies",
+                "engines"
+            ],
+            "rangeStrategy": "widen"
+        },
+        {
+            "description": "Never pin a provider constraint inside a reusable Terraform module. Terraform resolves each provider ONCE for the whole configuration, intersecting the constraints of the root and every module it calls, so an exact version in a module is a veto: the moment the root config pins a different version, resolution fails outright with 'no available releases match the given constraints'. HashiCorp's module guidance is explicit that shared modules declare a lower bound (>=) and leave the exact selection to the root, which is where the lock file lives. The root configurations in homelab/terraform/*/versions.tf already pin exactly and are unaffected -- only files under a modules/ directory are exempted.",
+            "matchManagers": [
+                "terraform"
+            ],
+            "matchFileNames": [
+                "**/modules/**"
+            ],
+            "rangeStrategy": "replace"
+        },
+        {
+            "description": "Never pin required_version, the Terraform/OpenTofu CLI constraint. It is not a dependency we install; it is the minimum CLI a consumer needs, and every runner, developer machine and CI image resolves it independently. Pinning '>= 1.5' to an exact version would fail the run for anyone on a newer CLI, which is every machine the moment the next patch ships. Paired with the rule below: matchers WITHIN a packageRule are ANDed, so the depType and the package name have to be two separate rules to act as alternatives -- the terraform manager's naming for this dep has changed across releases and whichever matcher is live, the other is simply inert.",
+            "matchManagers": [
+                "terraform"
+            ],
+            "matchDepTypes": [
+                "required_version"
+            ],
+            "rangeStrategy": "replace"
+        },
+        {
+            "description": "Second half of the required_version exemption above; see that rule for the reasoning. Separate rule because matchers within one packageRule are ANDed.",
+            "matchManagers": [
+                "terraform"
+            ],
+            "matchPackageNames": [
+                "hashicorp/terraform",
+                "opentofu/opentofu"
+            ],
+            "rangeStrategy": "replace"
         },
         {
             "description": "Prioritize and automerge vulnerability remediation PRs. Ordered second-to-LAST (Renovate merges matches in array order, later wins) so its semanticCommitType/Scope override every other classification in this file, including the final-stage-image rule above -- a vulnerability fix always commits fix(security) regardless of what dep type it happens to touch. This overrides config:recommended's :semanticPrefixFixDepsChoreOthers default (fix(deps) for a runtime dep, chore for a dev dep): consumer repos that batch routine fix(deps) commits into a weekly release (see docker-release.yml/npm-release.yml's RELEASE_DEPS) key that suppression on the literal scope 'deps', so the distinct 'security' scope is what keeps a vulnerability fix releasing immediately instead of being caught by that suppression. minimumReleaseAge is cleared so the root three-day hold never delays a fix, and groupName is cleared so a security bump is pulled out of the shared 'digest updates' branch and raised on its own. Only the major rule below outranks this one.",
