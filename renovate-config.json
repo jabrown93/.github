@@ -283,6 +283,32 @@
             "semanticCommitScope": "security"
         },
         {
+            "description": "Stable-and-done packages: clear abandonmentThreshold so release inactivity alone stops flagging them. abandonments:recommended marks anything without a release in a year, which is the right default for an application dependency but the wrong signal for a library that is FINISHED -- a base64 helper, a cron parser, a class-name joiner and a git-hooks shim have no features left to ship, so a quiet year is the expected steady state rather than evidence of neglect. Every name below was checked by hand on 2026-08-22 against its repository: each is still the canonical package for its job, still installs and builds on current runtimes, and has no successor that the ecosystem has moved to. That is a judgement call with a date on it, not a permanent exemption -- re-read this list when a name here starts failing to build, sprouts an unpatched advisory, or gets superseded, and take it off rather than widening the rule. Deliberately NOT matched by glob or datasource: an over-broad pattern here silently hides a package that really has been abandoned, which is the exact failure this whole mechanism exists to catch. github.com/robfig/cron/v3 is on the list for a further reason documented at backend/jobs/cron_spec_test.go in jabrown93/AURA -- it is gocron/v2's own parser, imported directly on purpose so a differential test can use it as an independent oracle.",
+            "matchPackageNames": [
+                "@semantic-release/**",
+                "amannn/action-semantic-pull-request",
+                "async-lock",
+                "bidict",
+                "blinker",
+                "class-variance-authority",
+                "clsx",
+                "defusedxml",
+                "github.com/google/go-cmp",
+                "github.com/google/uuid",
+                "github.com/gorilla/websocket",
+                "github.com/robfig/cron/v3",
+                "h11",
+                "husky",
+                "itsdangerous",
+                "Jinja2",
+                "MarkupSafe",
+                "qrcode",
+                "simple-websocket",
+                "waitress"
+            ],
+            "abandonmentThreshold": null
+        },
+        {
             "description": "A major version bump ALWAYS gets a human pull request. This must stay the LAST rule in the file: Renovate applies packageRules in array order with later rules winning on conflicting keys (and applies them a second time after the updateType config is merged -- lib/workers/repository/updates/flatten.ts), so its position here is what makes it override the vulnerability rule above. Without it, a security advisory whose lowest fixing version happens to be a major would auto-merge, since that rule sets automerge unconditionally. It also overrides :automergeBranch back to a PR: a major landing directly on the default branch with no PR is precisely the case where a human needs to read the changelog first. Grouping is cleared so a major is never buried inside the shared digest branch.",
             "matchUpdateTypes": [
                 "major"
