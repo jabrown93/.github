@@ -156,9 +156,11 @@
             "minimumReleaseAge": null
         },
         {
-            "description": "Trusted publishers: clear the 3-day minimumReleaseAge for ghcr.io/jabrown93/** (self-published -- holding our own CI's output three days serves nothing) and dhi.io/** (Docker Hardened Images; releases are CVE-driven and best taken promptly). Digest and pinDigest updates were already exempt via the rules above; this extends the exemption to tag/version bumps for these prefixes. Unscoped by datasource so it also reaches OCI Helm charts and any other datasource carrying these names.",
+            "description": "Trusted publishers: clear the 3-day minimumReleaseAge for everything we publish ourselves -- ghcr.io/jabrown93/** images, @jabrown93/* npm packages (e.g. @jabrown93/dev-config), and jabrown93/ci reusable workflows and actions (matched on the bare repo name, which is the packageName the per-component custom manager sets for depNames like jabrown93/ci:codeql) -- plus dhi.io/** (Docker Hardened Images; releases are CVE-driven and best taken promptly). Holding our own CI's output three days serves nothing: the fleet-wide fixes we cut in these repos are exactly the ones we want propagating immediately. Digest and pinDigest updates were already exempt via the rules above; this extends the exemption to tag/version bumps for these names. Unscoped by datasource so it also reaches OCI Helm charts and any other datasource carrying these names.",
             "matchPackageNames": [
                 "/^ghcr\\.io/jabrown93//",
+                "/^@jabrown93//",
+                "/^jabrown93/ci(:|$)/",
                 "/^dhi\\.io//"
             ],
             "minimumReleaseAge": null
