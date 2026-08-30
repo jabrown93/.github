@@ -49,7 +49,7 @@
     "customManagers": [
         {
             "customType": "regex",
-            "description": "Generic inline-comment convention: `<value> # renovate <datasource> <depName>`. Scoped to the file types that actually carry it; the previous `^.*$` pattern re-read every file in every repo on every run and could false-positive on any line that happened to end in a `# renovate ...` comment.",
+            "description": "Generic inline-comment convention: `<value> # renovate <datasource> <depName>`. Scoped to the file types that actually carry it; the previous `^.*$` pattern re-read every file in every repo on every run and could false-positive on any line that happened to end in a `# renovate ...` comment. Separators are `[ \\t]+`, not `\\s+`: `\\s` matches newlines, so the comment could be claimed from the NEXT line -- which is exactly how the comment-above convention (`# renovate: datasource=...` on its own line) collides with a pinned value on the line before it.",
             "managerFilePatterns": [
                 "/(^|/)Dockerfile[^/]*$/",
                 "/(^|/)[^/]+\\.(env|sh|bash|zsh)$/",
@@ -57,12 +57,12 @@
                 "/(^|/)[^/]+\\.tfvars$/"
             ],
             "matchStrings": [
-                "[\"']{0,1}(?<currentValue>[^\\s\"']*)[\"']{0,1}\\s+#\\s+(renovate\\s+)(?<datasource>[^\\s\"']+)\\s+(?<depName>[^\\s\"']+)"
+                "[\"']{0,1}(?<currentValue>[^\\s\"']*)[\"']{0,1}[ \\t]+#[ \\t]+(renovate[ \\t]+)(?<datasource>[^\\s\"']+)[ \\t]+(?<depName>[^\\s\"']+)"
             ]
         },
         {
             "customType": "regex",
-            "description": "Generic inline-comment convention for docker images: `<image>:<tag> # renovate`. Same file scoping rationale as the manager above.",
+            "description": "Generic inline-comment convention for docker images: `<image>:<tag> # renovate`. Same file scoping and same-line rationale as the manager above: with a newline-matching separator this matched `image: rancher/rke2-upgrade:v1.36.4-rke2r1@sha256:<hex>` followed on the NEXT line by `# renovate: datasource=docker depName=rancher/rke2-runtime`, extracting depName `rancher/rke2-upgrade:v1.36.4-rke2r1@sha256` and failing every lookup with page-not-found.",
             "managerFilePatterns": [
                 "/(^|/)Dockerfile[^/]*$/",
                 "/(^|/)[^/]+\\.(env|sh|bash|zsh)$/",
@@ -71,7 +71,7 @@
             ],
             "datasourceTemplate": "docker",
             "matchStrings": [
-                "[\"']{0,1}(?<depName>[^\\s\"']+):(?<currentValue>[^\\s\"']*)[\"']{0,1}\\s+#\\s+(renovate)"
+                "[\"']{0,1}(?<depName>[^\\s\"']+):(?<currentValue>[^\\s\"']*)[\"']{0,1}[ \\t]+#[ \\t]+(renovate)"
             ]
         },
         {
