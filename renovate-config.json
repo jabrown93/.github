@@ -300,7 +300,7 @@
             "abandonmentThreshold": null
         },
         {
-            "description": "A major version bump ALWAYS gets a human pull request. This must stay the LAST rule in the file: Renovate applies packageRules in array order with later rules winning on conflicting keys (and applies them a second time after the updateType config is merged -- lib/workers/repository/updates/flatten.ts), so its position here is what makes it override the vulnerability rule above. Without it, a security advisory whose lowest fixing version happens to be a major would auto-merge, since that rule sets automerge unconditionally. It also overrides :automergeBranch back to a PR: a major landing directly on the default branch with no PR is precisely the case where a human needs to read the changelog first. Grouping is cleared so a major is never buried inside the shared digest branch.",
+            "description": "A major version bump ALWAYS gets a human pull request. This must stay the LAST rule that sets automerge policy: Renovate applies packageRules in array order with later rules winning on conflicting keys (and applies them a second time after the updateType config is merged -- lib/workers/repository/updates/flatten.ts), so its position here is what makes it override the vulnerability rule above. Without it, a security advisory whose lowest fixing version happens to be a major would auto-merge, since that rule sets automerge unconditionally. It also overrides :automergeBranch back to a PR: a major landing directly on the default branch with no PR is precisely the case where a human needs to read the changelog first. Grouping is cleared so a major is never buried inside the shared digest branch; rules below may restore a group as long as they leave automerge alone.",
             "matchUpdateTypes": [
                 "major"
             ],
@@ -311,6 +311,21 @@
             "automerge": false,
             "automergeType": "pr",
             "groupName": null
+        },
+        {
+            "description": "Re-apply the vitest monorepo group after the major rule above clears it. That rule ungroups every major to keep majors out of the shared digest branch, but vitest and @vitest/* pin each other as exact peers, so a split major is unresolvable: npm fails ERESOLVE on 'Conflicting peer dependency' before a single test runs (homebridge-philips-hue-sync-box PR #475, #476 -- both dead on arrival for the 4.x to 5.x bump). This rule sets only the grouping keys, so the major rule's automerge=false, automergeType=pr, and labels all survive: a grouped vitest major is still a human-reviewed PR.",
+            "matchManagers": [
+                "npm"
+            ],
+            "matchPackageNames": [
+                "vitest",
+                "@vitest/**"
+            ],
+            "matchUpdateTypes": [
+                "major"
+            ],
+            "groupName": "vitest monorepo",
+            "groupSlug": "vitest-monorepo"
         }
     ]
 }
