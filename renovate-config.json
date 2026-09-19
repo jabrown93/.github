@@ -327,5 +327,8 @@
             "groupName": "vitest monorepo",
             "groupSlug": "vitest-monorepo"
         }
+    ],
+    "labels": [
+        "dependencies"
     ]
 }
