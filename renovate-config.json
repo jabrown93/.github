@@ -257,11 +257,11 @@
             "semanticCommitScope": "deps"
         },
         {
-            "description": "Lock file maintenance stays chore(dev-deps), matching the preset's treatment of lockfile updates as non-releasing.",
-            "matchJsonata": [
-                "isLockfileUpdate = true"
+            "description": "Lock file maintenance -> chore(deps): it refreshes transitive deps of runtime packages, and Renovate cannot tell which lock entries are runtime, so treat it as shipping. Lockfile-only bumps of a single dep (isLockfileUpdate) keep the scope from its depType rule above.",
+            "matchUpdateTypes": [
+                "lockFileMaintenance"
             ],
-            "semanticCommitScope": "dev-deps"
+            "semanticCommitScope": "deps"
         },
         {
             "description": "Never pin a peerDependency or an engines constraint. rangeStrategy=pin above is about what WE install; a peerDependency range is a compatibility declaration about what a CONSUMER may install alongside us, and an engines range is the same statement about the runtime. Pinning `typescript: >=5.7.0` to a single version does not make our build stricter -- it makes npm reject every consumer not on exactly that version, and turns a satisfied peer into an ERESOLVE failure. widen is the correct strategy for a peer range: it extends the supported window when a new major appears instead of narrowing it.",
