@@ -202,15 +202,66 @@
             "separateMinorPatch": false
         },
         {
-            "description": "Classify a Dockerfile's FINAL-stage base image as a runtime dependency, not build tooling. The dockerfile manager's default depType split under :semanticPrefixFixDepsChoreOthers types EVERY FROM instruction chore (neither 'final' nor 'stage' is in that preset's fix list), so a base-image bump would otherwise never release on its own -- wrong for 'final', which IS what ships (an intermediate builder 'stage' image correctly stays chore, unmatched by this rule, since it never reaches the runtime image). Sets the same fix/deps typing a runtime language dependency gets, so final-stage bumps participate in both immediate push-triggered releases and the weekly fix(deps) roll-up the same way. Deliberately ordered BEFORE the vulnerability rule below: Renovate merges matching packageRules in array order with later rules winning on conflicting keys, so a vulnerability fix that happens to target a final-stage image must be classified here first and then have the vulnerability rule's fix(security) win last -- swapping the order would let this rule's fix(deps) overwrite fix(security) and suppress an immediate security release.",
+            "description": "Dependency updates are never typed fix: fix releases immediately, while dependency bumps release only in the weekly roll-up (RELEASE_DEPS). Default every update to chore(dev-deps), which never releases; the rules below re-scope what ships to chore(deps), which the weekly run promotes to a patch. Overrides config:recommended's :semanticPrefixFixDepsChoreOthers.",
+            "matchPackageNames": [
+                "*"
+            ],
+            "semanticCommitType": "chore",
+            "semanticCommitScope": "dev-deps"
+        },
+        {
+            "description": "Runtime deps -> chore(deps). Same depTypes :semanticPrefixFixDepsChoreOthers types fix.",
+            "matchDepTypes": [
+                "dependencies",
+                "require"
+            ],
+            "semanticCommitScope": "deps"
+        },
+        {
+            "description": "Maven runtime scopes -> chore(deps).",
+            "matchDatasources": [
+                "maven"
+            ],
+            "matchDepTypes": [
+                "compile",
+                "provided",
+                "runtime",
+                "system",
+                "import",
+                "parent"
+            ],
+            "semanticCommitScope": "deps"
+        },
+        {
+            "description": "Python runtime deps -> chore(deps).",
+            "matchManagers": [
+                "pep621",
+                "poetry"
+            ],
+            "matchDepTypes": [
+                "project.dependencies",
+                "project.optional-dependencies",
+                "dependencies",
+                "extras"
+            ],
+            "semanticCommitScope": "deps"
+        },
+        {
+            "description": "A Dockerfile's FINAL-stage base image is what ships, so it is a runtime dep -> chore(deps). Builder 'stage' images stay chore(dev-deps).",
             "matchManagers": [
                 "dockerfile"
             ],
             "matchDepTypes": [
                 "final"
             ],
-            "semanticCommitType": "fix",
             "semanticCommitScope": "deps"
+        },
+        {
+            "description": "Lock file maintenance stays chore(dev-deps), matching the preset's treatment of lockfile updates as non-releasing.",
+            "matchJsonata": [
+                "isLockfileUpdate = true"
+            ],
+            "semanticCommitScope": "dev-deps"
         },
         {
             "description": "Never pin a peerDependency or an engines constraint. rangeStrategy=pin above is about what WE install; a peerDependency range is a compatibility declaration about what a CONSUMER may install alongside us, and an engines range is the same statement about the runtime. Pinning `typescript: >=5.7.0` to a single version does not make our build stricter -- it makes npm reject every consumer not on exactly that version, and turns a satisfied peer into an ERESOLVE failure. widen is the correct strategy for a peer range: it extends the supported window when a new major appears instead of narrowing it.",
@@ -255,7 +306,7 @@
             "rangeStrategy": "replace"
         },
         {
-            "description": "Prioritize and automerge vulnerability remediation PRs. Ordered second-to-LAST (Renovate merges matches in array order, later wins) so its semanticCommitType/Scope override every other classification in this file, including the final-stage-image rule above -- a vulnerability fix always commits fix(security) regardless of what dep type it happens to touch. This overrides config:recommended's :semanticPrefixFixDepsChoreOthers default (fix(deps) for a runtime dep, chore for a dev dep): consumer repos that batch routine fix(deps) commits into a weekly release (see docker-release.yml/npm-release.yml's RELEASE_DEPS) key that suppression on the literal scope 'deps', so the distinct 'security' scope is what keeps a vulnerability fix releasing immediately instead of being caught by that suppression. minimumReleaseAge is cleared so the root three-day hold never delays a fix, and groupName is cleared so a security bump is pulled out of the shared 'digest updates' branch and raised on its own. Only the major rule below outranks this one.",
+            "description": "Prioritize and automerge vulnerability remediation PRs. Ordered second-to-LAST (Renovate merges matches in array order, later wins) so its semanticCommitType/Scope override the chore(deps) rule above -- a vulnerability fix always commits fix(security) so it still triggers a release, while routine dependency bumps do not. minimumReleaseAge is cleared so the root three-day hold never delays a fix, and groupName is cleared so a security bump is pulled out of the shared 'digest updates' branch and raised on its own. Only the major rule below outranks this one.",
             "matchJsonata": [
                 "vulnerabilityFixVersion != null"
             ],
