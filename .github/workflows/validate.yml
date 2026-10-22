@@ -1,0 +1,36 @@
+name: Validate Renovate configuration
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      - renovate/**
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    container:
+      image: renovate/renovate:44.178.1@sha256:e2ef0f770c9c469857070753a447f445da11822e2f3601a3763b1b2d1d069b9a
+      # Renovate image's unprivileged user cannot write runner command files.
+      options: --user root
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          persist-credentials: false
+      - name: Validate repository configuration
+        run: renovate-config-validator --strict
+      - name: Validate shared presets
+        run: |
+          tmpdir="$(mktemp -d)"
+          trap 'rm -rf "$tmpdir"' EXIT
+          for config in renovate-config.json renovate-semantic-release.json; do
+            mkdir "$tmpdir/$config"
+            cp "$config" "$tmpdir/$config/renovate.json"
+            (cd "$tmpdir/$config" && renovate-config-validator --strict)
+          done
