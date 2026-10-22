@@ -188,6 +188,13 @@
             "minimumReleaseAgeBehaviour": "timestamp-optional"
         },
         {
+            "description": "Docker deps use rangeStrategy=replace, not the top-level pin. Some registries delist superseded tags while keeping them pullable -- dhi.io's tags/list carries only the newest patch per supported line (tailscale-operator-chart lists exactly one tag) -- so once a new patch ships the pinned currentValue is absent from the release list. Under pin, getCurrentVersion (lib/workers/repository/process/lookup/current.ts) returns getSatisfyingVersion([]) = null before reaching its isVersion(currentValue) fallback, the dep is skipped as invalid-value, and no update is ever offered again; that silently froze 39 dhi.io deps in homelab (verified v44.164.1). Docker tags are always exact versions, so pin does nothing for them that replace does not -- digest pinning is pinDigests, not rangeStrategy -- and replace keeps the fallback.",
+            "matchDatasources": [
+                "docker"
+            ],
+            "rangeStrategy": "replace"
+        },
+        {
             "description": "Group the vitest monorepo packages so vitest, @vitest/coverage-v8, and @vitest/ui bump together — mismatched versions hit peer-dependency ERESOLVE conflicts (e.g. pxs-mappers PR #324, #357)",
             "matchManagers": [
                 "npm"
