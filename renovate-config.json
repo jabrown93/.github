@@ -42,7 +42,9 @@
             "newLogLevel": "info"
         }
     ],
-    "dependencyDashboardOSVVulnerabilitySummary": "all",
+    "dependencyDashboard": {
+        "osvVulnerabilitySummary": "all"
+    },
     "automergeStrategy": "squash",
     "platformCommit": "enabled",
     "pinDigests": true,
