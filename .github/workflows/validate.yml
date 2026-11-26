@@ -16,7 +16,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     container:
-      image: renovate/renovate:45.0.0@sha256:97cfa40435ec98308f7fab0a830659e8aa829eb54858b32dba68541452f20b07
+      image: renovate/renovate:45.1.0@sha256:1438b77f8ed338e64c7a8bf53d40724fb6229690bcd3a42264158b0768ba9aba
       # Renovate image's unprivileged user cannot write runner command files.
       options: --user root
     steps:
